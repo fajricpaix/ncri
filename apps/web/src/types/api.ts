@@ -18,6 +18,7 @@ export type ImportReport = {
 
 export type RiskLevelName = "HIGH" | "MEDIUM" | "LOW" | "INSUFFICIENT_DATA";
 export type Overview = {
+  latest_period_end: string | null; method_version: string; sources: string[];
   total_objects: number;
   assessed_objects: number;
   distribution: Record<RiskLevelName, number>;

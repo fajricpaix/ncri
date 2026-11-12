@@ -13,6 +13,7 @@ from app.config import settings
 from app.db import get_db
 from app import auth, risk_service
 from app.importer import REQUIRED, parse_csv, validate_rows
+from app.risk import METHOD_VERSION
 
 public = APIRouter()  # tanpa login: health check & template CSV (tidak berisi data)
 router = APIRouter(dependencies=[Depends(auth.current_user)])  # semua lainnya wajib login
@@ -241,7 +242,12 @@ def overview(db: Session = DB):
             m.EarlyWarning.status.in_([m.WarningStatus.OPEN, m.WarningStatus.IN_REVIEW])).group_by(m.EarlyWarning.severity)):
         warn[sev.value] = n
     origins = dict(db.execute(select(m.CulturalObject.data_origin, func.count()).group_by(m.CulturalObject.data_origin)).all())
+    sources = list(db.scalars(select(m.DataSource.name).where(m.DataSource.id.in_(
+        select(m.IndicatorObservation.source_id).distinct())).order_by(m.DataSource.name)))
     return {
+        "latest_period_end": max((a.period_end for a in latest), default=None),
+        "method_version": METHOD_VERSION,
+        "sources": sources,
         "total_objects": total,
         "assessed_objects": total - dist["INSUFFICIENT_DATA"],
         "distribution": dist,

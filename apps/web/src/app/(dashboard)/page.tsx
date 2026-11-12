@@ -37,6 +37,9 @@ async function Content() {
         <span className="text-sm text-slate-500">
           {d.assessed_objects} dari {d.total_objects} objek memiliki data cukup untuk dinilai
         </span>
+        <span className="w-full text-xs text-slate-500">
+          Sumber: {d.sources.join(", ") || "—"} · penilaian s.d. {d.latest_period_end ?? "—"} · metode {d.method_version}
+        </span>
         <span className="ml-auto"><RunRiskButton /></span>
       </div>
 
