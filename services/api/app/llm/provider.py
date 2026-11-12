@@ -57,6 +57,8 @@ class FakeProvider:
     TAG = "[CONTOH DETERMINISTIK, bukan analisis AI] "
 
     async def generate_structured(self, system_prompt, user_payload, response_schema):
+        if user_payload.get("task") == "assistant":
+            return self._assistant(user_payload)
         a = user_payload["assessment"]
         top = a["factors"][:3]
         drivers = [{"factor": f["indicator_name"], "evidence_refs": f["evidence_observation_ids"],
@@ -76,6 +78,27 @@ class FakeProvider:
             limits.append(f"Data confidence rendah ({a['data_confidence']}).")
         return {"summary": f"{self.TAG}Skor risiko {a['risk_score']:.0f}/100 ({a['risk_level']}) untuk {user_payload['object']['name']}.",
                 "risk_drivers": drivers, "root_cause_hypotheses": hyps, "recommended_actions": actions, "limitations": limits}
+
+
+def _fake_assistant(self, p):
+    scored = [o for o in p["objects"] if o["score"] is not None]
+    limits = ["Contoh deterministik dari penyedia 'fake'; bukan hasil model AI."]
+    if any(o["data_origin"] == "SIMULATED" for o in p["objects"]):
+        limits.append("Seluruh data berstatus SIMULATED.")
+    if not scored:
+        return {"answer": f"{self.TAG}Data NCRI untuk cakupan '{p['scope']['name']}' belum cukup untuk dijawab (belum ada objek yang dinilai).",
+                "answerable": False, "evidence_refs": [], "limitations": limits + ["Tidak ada objek dengan skor pada cakupan ini."]}
+    top = sorted(scored, key=lambda o: -o["score"])[:3]
+    refs = [o["ref"] for o in top]
+    if p["scope"]["type"] == "object":  # cakupan satu objek: rujuk observasi bukti dari faktor teratas
+        refs = [r for f in top[0]["top_factors"][:2] for r in f["evidence_observation_ids"]] or refs
+    lines = "; ".join(f"{o['name']} (skor {o['score']:.0f}, {o['level']}, confidence {o['data_confidence']})" for o in top)
+    return {"answer": f"{self.TAG}Cakupan {p['scope']['name']}: {len(scored)} dari {len(p['objects'])} objek dinilai. Teratas: {lines}. "
+                      f"Pertanyaan Anda ('{p['question'][:100]}') dijawab hanya dari ringkasan ini.",
+            "answerable": True, "evidence_refs": refs, "limitations": limits}
+
+
+FakeProvider._assistant = _fake_assistant
 
 
 def get_provider() -> LLMProvider:

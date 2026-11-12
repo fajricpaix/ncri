@@ -71,3 +71,37 @@ def test_anthropic_provider_errors_do_not_leak_key():
     with pytest.raises(LLMError) as e:
         asyncio.run(_anthropic(lambda r: httpx.Response(500)).generate_structured("s", {}, {}))
     assert "k" != str(e.value) and "x-api-key" not in str(e.value)
+
+
+# ---- asisten tanya-jawab ----
+from app.llm.guardrails import validate_assistant
+from app.llm.schemas import AssistantOutput
+
+A_PAYLOAD = {"task": "assistant", "question": "objek apa paling berisiko?", "scope": {"type": "national", "name": "Nasional"},
+             "objects": [{"ref": "assessment:o1", "name": "X", "score": 90.0, "level": "HIGH", "data_confidence": 0.5,
+                          "data_origin": "SIMULATED", "top_factors": []}]}
+
+
+def ans(**kw):
+    return AssistantOutput.model_validate({"answer": "a", "limitations": ["terbatas"], **kw})
+
+
+def test_assistant_rejects_fabricated_or_missing_evidence():
+    _, e1 = validate_assistant(ans(evidence_refs=["assessment:karangan"]), {"assessment:o1"})
+    _, e2 = validate_assistant(ans(evidence_refs=[]), {"assessment:o1"})
+    _, e3 = validate_assistant(ans(evidence_refs=["assessment:o1"], limitations=[]), {"assessment:o1"})
+    assert e1 and e2 and e3
+    assert not validate_assistant(ans(evidence_refs=["assessment:o1"]), {"assessment:o1"})[1]
+
+
+def test_assistant_can_honestly_say_it_cannot_answer_without_evidence():
+    _, errors = validate_assistant(ans(answerable=False, answer="data tidak cukup"), {"assessment:o1"})
+    assert not errors
+
+
+def test_fake_assistant_passes_guardrail_and_refuses_when_nothing_is_scored():
+    raw = asyncio.run(FakeProvider().generate_structured("", A_PAYLOAD, {}))
+    assert not validate_assistant(AssistantOutput.model_validate(raw), {"assessment:o1"})[1]
+    empty = {**A_PAYLOAD, "objects": [{**A_PAYLOAD["objects"][0], "score": None}]}
+    raw2 = asyncio.run(FakeProvider().generate_structured("", empty, {}))
+    assert raw2["answerable"] is False and raw2["evidence_refs"] == []

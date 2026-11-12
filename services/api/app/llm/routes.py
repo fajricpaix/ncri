@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -91,7 +91,8 @@ async def recommendations(body: GenerateIn, user: m.User = auth.ANALYST, db: Ses
 
 @router.get("/cultural-objects/{id}/analyses", response_model=list[AnalysisOut])
 def analyses(id: uuid.UUID, db: Session = DB):
-    q = (select(m.LlmAnalysis).where(m.LlmAnalysis.cultural_object_id == id)
+    q = (select(m.LlmAnalysis).where(m.LlmAnalysis.cultural_object_id == id,
+                                     m.LlmAnalysis.analysis_type != m.AnalysisType.ASSISTANT)
          .order_by(m.LlmAnalysis.created_at.desc()))
     return [_analysis_out(a) for a in db.scalars(q)]
 
@@ -136,3 +137,50 @@ def review_recommendation(id: uuid.UUID, body: ReviewIn, user: m.User = auth.REV
     orch.review(db, r, body.decision.value, user)
     db.commit()
     return {"id": id, "status": r.status.value}
+
+
+class AskIn(BaseModel):
+    question: str = Field(min_length=3, max_length=500)
+    scope_type: str = "national"      # national | province | object
+    scope_id: str | None = None       # kode provinsi atau id objek
+
+
+class AnswerOut(BaseModel):
+    id: uuid.UUID
+    question: str
+    scope: str
+    answer: str
+    answerable: bool
+    evidence_refs: list[str]
+    limitations: list[str]
+    provider: str
+    model: str
+
+
+def _answer_out(a: m.LlmAnalysis) -> AnswerOut:
+    o = a.output_json
+    return AnswerOut(id=a.id, question=a.input_snapshot["question"], scope=a.input_snapshot["scope"]["name"],
+                     answer=o["answer"], answerable=o.get("answerable", True), evidence_refs=a.evidence_refs,
+                     limitations=o.get("limitations", []), provider=a.provider, model=a.model)
+
+
+@router.post("/llm/assistant", response_model=AnswerOut, dependencies=[Depends(rate_limit)])
+async def assistant(body: AskIn, user: m.User = auth.TRIAGE, db: Session = DB):
+    try:
+        row = await orch.ask(db, get_provider(), body.scope_type, body.scope_id, body.question.strip(), user)
+    except LLMError as e:
+        raise HTTPException(503, str(e))
+    except orch.BadScope as e:
+        raise HTTPException(422, str(e))
+    except orch.InvalidOutput as e:
+        raise HTTPException(502, {"message": "jawaban LLM ditolak guardrail", "analysis_id": str(e.analysis_id), "errors": e.errors})
+    return _answer_out(row)
+
+
+@router.get("/llm/assistant/history", response_model=list[AnswerOut])
+def assistant_history(user: m.User = auth.TRIAGE, db: Session = DB):
+    """Hanya pertanyaan milik pengguna sendiri (pertanyaan bisa memuat hal sensitif)."""
+    q = (select(m.LlmAnalysis).where(m.LlmAnalysis.analysis_type == m.AnalysisType.ASSISTANT,
+                                     m.LlmAnalysis.created_by == user.id, m.LlmAnalysis.validation_errors == [])
+         .order_by(m.LlmAnalysis.created_at.desc()).limit(20))
+    return [_answer_out(a) for a in db.scalars(q)]

@@ -256,6 +256,7 @@ class AnalysisType(str, enum.Enum):
     RISK_EXPLANATION = "RISK_EXPLANATION"
     ROOT_CAUSE = "ROOT_CAUSE"
     RECOMMENDATION = "RECOMMENDATION"
+    ASSISTANT = "ASSISTANT"
 
 
 class ReviewStatus(str, enum.Enum):
@@ -285,6 +286,7 @@ class LlmAnalysis(Base):
     output_json: Mapped[dict] = mapped_column(JSONB)
     evidence_refs: Mapped[list] = mapped_column(JSONB, default=list)
     validation_errors: Mapped[list] = mapped_column(JSONB, default=list)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     review_status: Mapped[ReviewStatus] = mapped_column(Enum(ReviewStatus), default=ReviewStatus.DRAFT)
     reviewed_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -86,3 +86,8 @@ export type PredictionStatus = {
   requirements: { label: string; current: number; needed: number; met: boolean }[];
   thresholds: Record<string, number>;
 };
+
+export type Answer = {
+  id: string; question: string; scope: string; answer: string; answerable: boolean;
+  evidence_refs: string[]; limitations: string[]; provider: string; model: string;
+};

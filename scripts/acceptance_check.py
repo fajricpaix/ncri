@@ -100,6 +100,16 @@ check("13 rekomendasi LLM berstatus DRAFT", mine["status"] == "DRAFT")
 check("13 Analyst tidak boleh menyetujui drafnya sendiri", analyst.post(f"/recommendations/{mine['id']}/review", json={"decision": "APPROVED"}).status_code == 403)
 check("13 Reviewer dapat menyetujui", reviewer.post(f"/recommendations/{mine['id']}/review", json={"decision": "APPROVED"}).status_code == 200)
 
+print("9b. Asisten tanya-jawab")
+q = {"question": "Kenapa skornya tinggi?", "scope_type": "object", "scope_id": topeng["id"]}
+ar = analyst.post("/llm/assistant", json=q)
+ad = ar.json()
+check("Viewer ditolak, Reviewer/Analyst boleh", viewer.post("/llm/assistant", json=q).status_code == 403 and reviewer.post("/llm/assistant", json=q).status_code == 200 and ar.status_code == 200)
+check("jawaban berbukti: semua ref ⊆ observasi objek", ad["answerable"] and ad["evidence_refs"] and set(ad["evidence_refs"]) <= {o["id"] for o in hist}, f"{len(ad['evidence_refs'])} ref")
+ar2 = analyst.post("/llm/assistant", json={"question": "Bagaimana kondisi Aceh?", "scope_type": "province", "scope_id": "11"}).json()
+check("tanpa data => answerable=false, tanpa bukti karangan", ar2["answerable"] is False and ar2["evidence_refs"] == [])
+check("riwayat hanya milik sendiri; cakupan salah ditolak", len(reviewer.get("/llm/assistant/history").json()) < len(analyst.get("/llm/assistant/history").json()) and analyst.post("/llm/assistant", json={"question": "halo", "scope_type": "province", "scope_id": "99"}).status_code == 422)
+
 print("14. Kunci API tidak pernah di browser")
 built = [p for p in glob.glob(str(ROOT / "apps/web/.next/static/**/*"), recursive=True) if p.endswith((".js", ".html", ".css"))]
 leak = [p for p in built if re.search(r"LLM_API_KEY|sk-ant-|x-api-key", Path(p).read_text(errors="ignore"))]
@@ -110,7 +120,7 @@ check("respons API tidak membocorkan konfigurasi LLM", "api_key" not in viewer.g
 
 print("15. Audit log untuk tindakan penting")
 acts = {x["action"] for x in admin.get("/audit-logs?limit=500").json()}
-need = {"auth.login", "import.csv", "risk.run", "warning.update", "llm.recommendation", "llm.root_cause", "llm.review"}
+need = {"auth.login", "import.csv", "risk.run", "warning.update", "llm.recommendation", "llm.root_cause", "llm.review", "llm.assistant"}
 check("login, import, hitung risiko, peringatan, generate AI, review tercatat", need <= acts, f"kurang: {sorted(need - acts)}" if need - acts else "")
 check("Viewer tidak boleh membaca audit log", viewer.get("/audit-logs").status_code == 403)
 

@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session
 
 from app import models as m
 from app.llm import guardrails
-from app.llm.prompts import PROMPT_VERSION, system_prompt
+from app.llm.prompts import ASSISTANT_SYSTEM, PROMPT_VERSION, system_prompt
 from app.llm.provider import LLMProvider
-from app.llm.schemas import LLMOutput
+from app.llm.schemas import AssistantOutput, LLMOutput
 
 
 class NoAssessment(Exception):
@@ -77,7 +77,7 @@ async def generate(db: Session, provider: LLMProvider, object_id: uuid.UUID, ana
         errors = [f"output tidak sesuai schema: {len(e.errors())} masalah"]
 
     row = m.LlmAnalysis(
-        cultural_object_id=object_id, risk_assessment_id=assessment.id, analysis_type=m.AnalysisType(analysis_type),
+        created_by=user.id if user else None, cultural_object_id=object_id, risk_assessment_id=assessment.id, analysis_type=m.AnalysisType(analysis_type),
         provider=provider.name, model=provider.model, prompt_version=PROMPT_VERSION, input_snapshot=payload,
         output_json=out.model_dump() if out else raw, evidence_refs=guardrails.collect_refs(out) if out else [],
         validation_errors=errors, review_status=m.ReviewStatus.REJECTED if errors else m.ReviewStatus.DRAFT)
@@ -108,3 +108,85 @@ def review(db: Session, row, decision: str, user):
     row.reviewed_by = user.id
     db.add(m.AuditLog(user_id=user.id, action="llm.review", entity_type=type(row).__name__, entity_id=row.id,
                       meta={"decision": decision}))
+
+
+MAX_OBJECTS = 25  # batasi ukuran konteks; terpotong ditandai pada payload
+
+
+class BadScope(Exception):
+    pass
+
+
+def build_assistant_context(db: Session, scope_type: str, scope_id: str | None, question: str):
+    from app.reports import _rows  # satu baris per objek: skor, level, provinsi, asal data
+
+    rows = _rows(db)
+    if scope_type == "object":
+        rows = [r for r in rows if r["id"] == scope_id]
+        if not rows:
+            raise BadScope("objek tidak ditemukan")
+        name = rows[0]["name"]
+    elif scope_type == "province":
+        rows = [r for r in rows if r["province_code"] == scope_id]
+        name = rows[0]["province"] if rows else (scope_id or "")
+        if not db.scalar(select(m.Region.id).where(m.Region.code == scope_id)):
+            raise BadScope("provinsi tidak dikenal")
+    elif scope_type == "national":
+        name = "Nasional"
+    else:
+        raise BadScope("cakupan tidak valid")
+    rows = sorted(rows, key=lambda r: -(r["score"] if r["score"] is not None else -1))
+    truncated = len(rows) > MAX_OBJECTS
+    rows = rows[:MAX_OBJECTS]
+
+    ids = [uuid.UUID(r["id"]) for r in rows]
+    latest = {a.cultural_object_id: a for a in db.scalars(
+        select(m.RiskAssessment).where(m.RiskAssessment.cultural_object_id.in_(ids))
+        .order_by(m.RiskAssessment.period_end))}  # urut naik: yang terakhir menimpa = terbaru
+    objects = []
+    for r in rows:
+        a = latest.get(uuid.UUID(r["id"]))
+        factors = [] if not a else [{"indicator_name": f.indicator.name, "change_pct": float(f.change_pct),
+                                      "contribution": float(f.weighted_contribution),
+                                      "evidence_observation_ids": f.evidence_observation_ids}
+                                     for f in sorted(a.factors, key=lambda f: -f.weighted_contribution)[:3]]
+        objects.append({"ref": f"assessment:{r['id']}", "name": r["name"], "category": r["category"],
+                        "province": r["province"], "score": r["score"], "level": r["level"],
+                        "data_confidence": r["confidence"], "data_origin": r["data_origin"], "top_factors": factors})
+    payload = {"task": "assistant", "question": question, "scope": {"type": scope_type, "name": name},
+               "objects": objects, "truncated": truncated, "observations": []}
+    allowed = {o["ref"] for o in objects}
+    if scope_type == "object":
+        ind = {i.id: i for i in db.scalars(select(m.Indicator))}
+        obs = db.scalars(select(m.IndicatorObservation).where(m.IndicatorObservation.cultural_object_id == ids[0])
+                         .order_by(m.IndicatorObservation.period_start)).all()
+        payload["observations"] = [{"id": str(o.id), "indicator": ind[o.indicator_id].code,
+                                    "period_end": o.period_end.isoformat(), "value": None if o.value_numeric is None else float(o.value_numeric),
+                                    "verification_status": o.verification_status.value} for o in obs]
+        allowed |= {o["id"] for o in payload["observations"]}
+    return payload, allowed
+
+
+async def ask(db: Session, provider: LLMProvider, scope_type: str, scope_id: str | None, question: str, user) -> m.LlmAnalysis:
+    payload, allowed = build_assistant_context(db, scope_type, scope_id, question)
+    raw = await provider.generate_structured(ASSISTANT_SYSTEM, payload, AssistantOutput.model_json_schema())
+    errors: list[str] = []
+    out = None
+    try:
+        out, errors = guardrails.validate_assistant(AssistantOutput.model_validate(raw), allowed)
+    except ValidationError as e:
+        errors = [f"output tidak sesuai schema: {len(e.errors())} masalah"]
+    obj_id = uuid.UUID(scope_id) if scope_type == "object" else None
+    row = m.LlmAnalysis(
+        created_by=user.id, cultural_object_id=obj_id, analysis_type=m.AnalysisType.ASSISTANT, provider=provider.name,
+        model=provider.model, prompt_version=PROMPT_VERSION, input_snapshot=payload,
+        output_json=out.model_dump() if out else raw, evidence_refs=sorted(set(out.evidence_refs)) if out else [],
+        validation_errors=errors, review_status=m.ReviewStatus.REJECTED if errors else m.ReviewStatus.DRAFT)
+    db.add(row)
+    db.flush()
+    db.add(m.AuditLog(user_id=user.id, action="llm.assistant", entity_type="llm_analysis", entity_id=row.id,
+                      meta={"provider": provider.name, "scope": scope_type, "question_chars": len(question), "rejected": bool(errors)}))
+    db.commit()
+    if errors:
+        raise InvalidOutput(row.id, errors)
+    return row

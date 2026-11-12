@@ -38,3 +38,18 @@ def collect_refs(out: LLMOutput) -> list[str]:
     refs |= {r for h in out.root_cause_hypotheses for r in h.supporting_evidence}
     refs |= {r for a in out.recommended_actions for r in a.evidence_refs}
     return sorted(refs)
+
+
+def validate_assistant(out, allowed_ids: set[str]):
+    """Jawaban yang menyatakan bisa dijawab wajib berbukti; referensi harus ada pada konteks yang dikirim."""
+    errors = []
+    if not out.answer.strip() or len(out.answer) > 4000:
+        errors.append("answer kosong atau terlalu panjang")
+    if not out.limitations:
+        errors.append("limitations kosong (keterbatasan data wajib disebut)")
+    unknown = [r for r in out.evidence_refs if r not in allowed_ids]
+    if unknown:
+        errors.append(f"referensi tidak ada di data yang diberikan: {unknown[:3]}")
+    if out.answerable and not out.evidence_refs:
+        errors.append("jawaban tanpa evidence reference")
+    return out, errors

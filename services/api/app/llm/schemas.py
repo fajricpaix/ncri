@@ -34,3 +34,10 @@ class LLMOutput(BaseModel):
     root_cause_hypotheses: list[Hypothesis] = Field(default_factory=list)
     recommended_actions: list[Action] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
+
+
+class AssistantOutput(BaseModel):
+    answer: str
+    answerable: bool = True  # false bila data NCRI tidak cukup untuk menjawab
+    evidence_refs: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)

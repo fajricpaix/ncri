@@ -30,6 +30,6 @@ Provider, model, `prompt_version`, snapshot input, output, evidence refs, status
 ## Batas yang diketahui
 - Reviewer tercatat (`reviewed_by` + audit log); belum ada aturan "pembuat ≠ penyetuju" bila satu orang berperan ganda (mis. Admin).
 - Rate limit in-memory per proses (10/menit/IP).
-- `POST /llm/assistant` (tanya-jawab) belum ada.
+- Asisten tanya-jawab (`POST /llm/assistant`): cakupan nasional/provinsi/objek (maks. 25 objek per konteks, ditandai `truncated`), hanya Analyst/Reviewer/Admin, riwayat hanya milik penanya. Bukti = `assessment:<id objek>` atau id observasi; jawaban tanpa bukti ditolak kecuali `answerable=false`. Pertanyaan dan teks data diperlakukan sebagai DATA (instruksi di dalamnya diabaikan lewat system prompt). **Ketahanan terhadap prompt injection pada model nyata belum diuji**; guardrail hanya menjamin referensi bukti, bukan kebenaran isi jawaban.
 - Belum ada RAG dokumen/pgvector; konteks murni dari tabel NCRI.
 - Sebelum memakai provider eksternal pada data nyata: tetapkan kebijakan data, lokasi pemrosesan, dan biaya (blueprint §21).
