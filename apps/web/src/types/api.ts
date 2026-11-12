@@ -80,3 +80,9 @@ export type ExecutiveReport = {
   method_version: string; method_params: { decline_for_max_risk_pct: number; thresholds: { HIGH: number; MEDIUM: number } };
   caveats: string[]; objects: ReportObject[];
 };
+
+export type PredictionStatus = {
+  passed: boolean; reasons: string[]; target: string; baseline: string;
+  requirements: { label: string; current: number; needed: number; met: boolean }[];
+  thresholds: Record<string, number>;
+};

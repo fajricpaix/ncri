@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     database_url: str = "postgresql+psycopg://ncri:ncri_dev_password@localhost:5432/ncri"
     max_upload_bytes: int = 5_000_000
+    # Governance: true HANYA setelah ahli menyetujui definisi target prediksi (lihat docs/model-card.md)
+    prediction_target_validated: bool = False
     app_env: str = "development"
     # Auth: sesi = JWT di cookie httpOnly. Di luar development, auth_secret WAJIB diisi (>= 32 karakter).
     auth_secret: str = "dev-only-insecure-secret-change-me"

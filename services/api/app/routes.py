@@ -13,6 +13,7 @@ from app.config import settings
 from app.db import get_db
 from app import auth, risk_service
 from app.importer import REQUIRED, parse_csv, validate_rows
+from app.ml import readiness
 from app.risk import METHOD_VERSION
 
 public = APIRouter()  # tanpa login: health check & template CSV (tidak berisi data)
@@ -263,3 +264,32 @@ def overview(db: Session = DB):
                       "score": float(a.risk_score), "level": a.risk_level.value,
                       "data_confidence": float(a.data_quality_score), "is_simulated": a.is_simulated} for a in ranked],
     }
+
+
+# ---------- Prediksi (Sprint 6): hanya kesiapan; prediksi TIDAK dihasilkan sebelum gerbang lulus ----------
+
+def _prediction_status(db: Session) -> dict:
+    series: dict[str, list] = {}
+    for a in db.scalars(select(m.RiskAssessment).where(m.RiskAssessment.method_version == METHOD_VERSION)):
+        series.setdefault(str(a.cultural_object_id), []).append(
+            (a.period_end, None if a.risk_score is None else float(a.risk_score)))
+    st = readiness.stats(series, settings.prediction_target_validated)
+    # Belum ada model yang terdaftar => test_eval None => gerbang pasti menolak.
+    return {**readiness.gate(st, None), "stats": st, "target": "Objek berstatus HIGH pada periode penilaian berikutnya (PROVISIONAL, belum disetujui ahli)",
+            "baseline": "persistensi: status sekarang = status berikutnya"}
+
+
+@router.get("/analytics/prediction/status")
+def prediction_status(db: Session = DB):
+    return _prediction_status(db)
+
+
+@router.post("/analytics/prediction/run")
+def prediction_run(user: m.User = auth.ANALYST, db: Session = DB):
+    st = _prediction_status(db)
+    if not st["passed"]:
+        auth.audit(db, user, "prediction.refused", "prediction", None, {"reasons": len(st["reasons"])})
+        db.commit()
+        raise HTTPException(409, {"message": "Data historis belum cukup untuk prediksi tervalidasi; hanya tren deskriptif yang tersedia.",
+                                  "reasons": st["reasons"]})
+    raise HTTPException(501, "Gerbang lulus, tetapi belum ada model terdaftar (butuh keputusan ahli).")
