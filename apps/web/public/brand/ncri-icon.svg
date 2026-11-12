@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 640" role="img" aria-label="NCRI">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F6D77A"/><stop offset=".5" stop-color="#D9A93A"/><stop offset="1" stop-color="#B8821F"/>
+    </linearGradient>
+    <pattern id="batik" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(-25)">
+      <rect width="28" height="28" fill="#0B1F4B"/>
+      <path d="M14 3L25 14L14 25L3 14Z" fill="none" stroke="#E7B94A" stroke-width="2"/>
+      <circle cx="14" cy="14" r="2.5" fill="#E7B94A"/>
+    </pattern>
+  </defs>
+  <g id="emblem">
+    <g id="wings" fill="url(#gold)">
+      <path id="wing-1" d="M232 170C180 120 120 120 80 150C130 150 190 170 232 190Z"/>
+      <path id="wing-2" d="M230 190C170 160 100 170 60 210C120 200 180 205 230 210Z"/>
+      <path id="wing-3" d="M230 210C170 200 100 220 70 270C130 250 180 240 230 235Z"/>
+      <path id="wing-4" d="M232 235C180 250 120 290 110 330C160 300 200 280 238 265Z"/>
+    </g>
+    <g id="ring-flag">
+      <path id="ring" fill="url(#gold)" d="M300 28C495 28 615 170 592 352C568 240 470 95 300 80Z"/>
+      <path id="flag-red" fill="#C8102E" d="M230 70C360 30 490 80 545 175L520 190C470 120 360 85 235 105Z"/>
+      <path id="flag-white" fill="#F4F4F4" d="M235 105C360 85 470 120 520 190L500 215C455 150 360 120 240 140Z"/>
+    </g>
+    <g id="figure">
+      <path id="face" fill="#0B1F4B" d="M300 150C330 150 345 175 340 195L364 224L346 232L352 242L344 250L348 270C340 290 320 294 306 296L312 345L225 345C240 300 232 270 236 230C236 190 260 150 300 150Z"/>
+      <path id="headdress" fill="url(#gold)" d="M232 200C220 140 270 100 330 120C350 128 352 150 340 160C320 140 270 140 250 190Z"/>
+      <circle id="headdress-jewel" cx="290" cy="128" r="9" fill="#0B1F4B"/>
+      <path id="eye" fill="none" stroke="#E7B94A" stroke-width="4" stroke-linecap="round" d="M316 212Q326 206 334 212"/>
+      <path id="shoulder" fill="url(#gold)" d="M225 345C250 330 290 328 312 345L300 372C270 360 240 362 215 372Z"/>
+    </g>
+    <g id="stupas" fill="#0B1F4B" transform="translate(-45,22)">
+      <path id="stupa-main" d="M315 420C315 380 345 355 400 352C455 355 485 380 485 420Z"/>
+      <path id="stupa-spire" d="M392 328H408L412 352H388Z"/>
+      <path id="stupa-small-l1" d="M268 420C268 398 280 386 296 384C312 386 324 398 324 420Z"/>
+      <path id="stupa-small-l2" d="M232 420C232 404 242 394 254 392C266 394 276 404 276 420Z"/>
+      <path id="stupa-small-r" d="M488 420C488 400 500 388 516 386C532 388 544 400 544 420Z"/>
+      <g id="stupa-dots" fill="#E7B94A">
+        <circle cx="370" cy="385" r="5"/><circle cx="400" cy="378" r="5"/><circle cx="430" cy="385" r="5"/>
+        <circle cx="385" cy="405" r="5"/><circle cx="415" cy="405" r="5"/>
+      </g>
+    </g>
+    <g id="batik-wave">
+      <path id="wave-gold" fill="url(#gold)" d="M40 470C170 560 400 520 560 340L585 345C450 590 160 620 20 500Z"/>
+      <path id="wave-batik" fill="url(#batik)" d="M60 470C180 545 400 510 545 355L560 362C430 560 180 585 50 490Z"/>
+    </g>
+  </g>
+</svg>

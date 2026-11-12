@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+:root {
+  --background: #eef2f7;
+  --foreground: #0b1f4b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-navy: #0b1f4b;
+  --color-navy-2: #12306b;
+  --color-gold: #d9a93a;
+  --color-gold-soft: #f6e7b8;
+  --color-risk-high: #d64545;
+  --color-risk-mid: #e8a317;
+  --color-risk-low: #2e9e5b;
+  --color-risk-none: #8a94a6;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+@media print {
+  .print-hide, .app-sidebar, .app-topbar { display: none !important; }
+  .app-shell { display: block !important; height: auto !important; }
+  .app-main { overflow: visible !important; padding: 0 !important; }
+  body { background: #fff; }
+}
