@@ -310,3 +310,11 @@ class PolicyRecommendation(Base):
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = _ts()
     cultural_object: Mapped[CulturalObject] = relationship()
+
+
+class LoginFailure(Base):
+    """Satu baris per percobaan login gagal; dihitung dalam jendela waktu lalu dihapus. Lihat app/lockout.py."""
+    __tablename__ = "login_failures"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    key: Mapped[str] = mapped_column(String(254), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)

@@ -25,46 +25,13 @@ class Limiter:
         self.hits: dict[str, deque] = defaultdict(deque)
 
     def __call__(self, request: Request):
-        q = self.hits[client_ip(request)]
         now = time.monotonic()
+        if len(self.hits) > 10_000:  # buang hanya IP yang jendelanya sudah habis
+            for ip in [k for k, v in self.hits.items() if not v or now - v[-1] > 60]:
+                del self.hits[ip]
+        q = self.hits[client_ip(request)]
         while q and now - q[0] > 60:
             q.popleft()
         if len(q) >= self.per_minute():
             raise HTTPException(429, self.message)
         q.append(now)
-
-
-class FailureTracker:
-    """Kunci sementara per kunci (mis. email) setelah gagal berulang. Berlaku sama untuk akun yang tidak ada,
-    jadi tidak membocorkan apakah email terdaftar. Konsekuensi: penyerang bisa mengunci akun korban selama
-    jendela waktu, tetapi tidak bisa menebak sandi. ponytail: in-memory per proses."""
-
-    MAX_KEYS = 10_000
-
-    def __init__(self, max_failures, window_seconds):
-        self.max_failures, self.window = max_failures, window_seconds  # callable agar dibaca saat runtime
-        self.fails: dict[str, deque] = {}
-
-    def _prune(self, key, now):
-        q = self.fails.get(key)
-        while q and now - q[0] > self.window():
-            q.popleft()
-        if q is not None and not q:
-            del self.fails[key]
-
-    def blocked(self, key: str, now: float | None = None) -> bool:
-        now = time.monotonic() if now is None else now
-        self._prune(key, now)
-        return len(self.fails.get(key, ())) >= self.max_failures()
-
-    def fail(self, key: str, now: float | None = None):
-        now = time.monotonic() if now is None else now
-        if len(self.fails) >= self.MAX_KEYS:  # batasi memori terhadap banjir email acak
-            for k in list(self.fails)[: self.MAX_KEYS // 2]:
-                self._prune(k, now)
-            if len(self.fails) >= self.MAX_KEYS:
-                self.fails.pop(next(iter(self.fails)))
-        self.fails.setdefault(key, deque()).append(now)
-
-    def clear(self, key: str):
-        self.fails.pop(key, None)

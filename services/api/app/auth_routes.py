@@ -5,15 +5,14 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app import auth, models as m
+from app import auth, lockout, models as m
 from app.config import settings
 from app.db import get_db
-from app.ratelimit import FailureTracker, Limiter
+from app.ratelimit import Limiter
 
 router = APIRouter()
 DB = Depends(get_db)
 login_limiter = Limiter(lambda: settings.login_rate_per_minute, "terlalu banyak percobaan login")
-login_failures = FailureTracker(lambda: settings.login_max_failures, lambda: settings.login_lock_minutes * 60)
 
 
 class LoginIn(BaseModel):
@@ -45,16 +44,16 @@ class UserPatch(BaseModel):
 @router.post("/auth/login", response_model=UserOut, dependencies=[Depends(login_limiter)])
 def login(body: LoginIn, response: Response, db: Session = DB):
     email = body.email.strip().lower()
-    if login_failures.blocked(email):  # sebelum hashing: percobaan saat terkunci tidak memakan CPU
+    if lockout.is_locked(db, email):  # sebelum hashing: percobaan saat terkunci tidak memakan CPU
         raise HTTPException(429, f"terlalu banyak gagal login; coba lagi dalam {settings.login_lock_minutes} menit")
     user = db.scalar(select(m.User).where(m.User.email == email))
     ok = auth.verify_password(body.password, user.password_hash if user else auth._DUMMY)
     if not (user and ok and user.is_active):
-        login_failures.fail(email)
+        lockout.record_failure(db, email)
         auth.audit(db, None, "auth.login_failed", "user", None, {"email": email[:100]})
         db.commit()
         raise HTTPException(401, "email atau kata sandi salah")
-    login_failures.clear(email)
+    lockout.clear(db, email)
     auth.set_session(response, user)
     auth.audit(db, user, "auth.login", "user", user.id)
     db.commit()
