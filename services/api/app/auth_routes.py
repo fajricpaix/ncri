@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -8,11 +8,12 @@ from sqlalchemy.orm import Session
 from app import auth, models as m
 from app.config import settings
 from app.db import get_db
-from app.ratelimit import Limiter
+from app.ratelimit import FailureTracker, Limiter
 
 router = APIRouter()
 DB = Depends(get_db)
 login_limiter = Limiter(lambda: settings.login_rate_per_minute, "terlalu banyak percobaan login")
+login_failures = FailureTracker(lambda: settings.login_max_failures, lambda: settings.login_lock_minutes * 60)
 
 
 class LoginIn(BaseModel):
@@ -43,12 +44,17 @@ class UserPatch(BaseModel):
 
 @router.post("/auth/login", response_model=UserOut, dependencies=[Depends(login_limiter)])
 def login(body: LoginIn, response: Response, db: Session = DB):
-    user = db.scalar(select(m.User).where(m.User.email == body.email.strip().lower()))
+    email = body.email.strip().lower()
+    if login_failures.blocked(email):  # sebelum hashing: percobaan saat terkunci tidak memakan CPU
+        raise HTTPException(429, f"terlalu banyak gagal login; coba lagi dalam {settings.login_lock_minutes} menit")
+    user = db.scalar(select(m.User).where(m.User.email == email))
     ok = auth.verify_password(body.password, user.password_hash if user else auth._DUMMY)
     if not (user and ok and user.is_active):
-        auth.audit(db, None, "auth.login_failed", "user", None, {"email": body.email[:100]})
+        login_failures.fail(email)
+        auth.audit(db, None, "auth.login_failed", "user", None, {"email": email[:100]})
         db.commit()
         raise HTTPException(401, "email atau kata sandi salah")
+    login_failures.clear(email)
     auth.set_session(response, user)
     auth.audit(db, user, "auth.login", "user", user.id)
     db.commit()
@@ -56,7 +62,16 @@ def login(body: LoginIn, response: Response, db: Session = DB):
 
 
 @router.post("/auth/logout")
-def logout(response: Response):
+def logout(request: Request, response: Response, db: Session = DB):
+    """Mencabut sesi di sisi server (token_version naik): token yang dicuri/diputar ulang tidak berlaku lagi.
+    Konsekuensi: perangkat lain milik akun yang sama ikut keluar."""
+    token = request.cookies.get(auth.COOKIE)
+    parsed = auth.read_token(token) if token else None
+    user = db.get(m.User, parsed[0]) if parsed else None
+    if user and user.token_version == parsed[1]:
+        user.token_version += 1
+        auth.audit(db, user, "auth.logout", "user", user.id)
+        db.commit()
     auth.clear_session(response)
     return {"ok": True}
 
@@ -98,6 +113,8 @@ def patch_user(id: uuid.UUID, body: UserPatch, admin: m.User = auth.ADMIN, db: S
         u.is_active, changes["is_active"] = body.is_active, body.is_active
     if body.password:
         u.password_hash, changes["password_reset"] = auth.hash_password(body.password), True
+    if changes:
+        u.token_version += 1  # sandi/role/status berubah => sesi lama dicabut
     auth.audit(db, admin, "user.update", "user", u.id, changes)
     db.commit()
     return u

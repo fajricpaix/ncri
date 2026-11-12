@@ -169,6 +169,8 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String)
     role: Mapped[Role] = mapped_column(Enum(Role))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # dinaikkan saat logout, ganti sandi, ganti role/status: semua token lama langsung tidak berlaku
+    token_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = _ts()
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

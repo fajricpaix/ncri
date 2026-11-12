@@ -15,9 +15,14 @@ def test_password_hash_roundtrip_and_salted():
     assert not auth.verify_password("salah", h1) and not auth.verify_password("x", "bukan-hash")
 
 
+def test_token_carries_version_so_old_tokens_can_be_revoked():
+    u = User(id=uuid.uuid4(), role=Role.VIEWER, token_version=3)
+    assert auth.read_token(auth.make_token(u)) == (u.id, 3)  # current_user menolak bila versi di DB sudah berbeda
+
+
 def test_token_roundtrip_expiry_and_tampering():
     u = User(id=uuid.uuid4(), role=Role.VIEWER)
-    assert auth.read_token(auth.make_token(u)) == u.id
+    assert auth.read_token(auth.make_token(u)) == (u.id, 0)
     old = datetime.now(timezone.utc) - timedelta(minutes=settings.token_ttl_minutes + 5)
     assert auth.read_token(auth.make_token(u, now=old)) is None                      # kedaluwarsa
     forged = jwt.encode({"sub": str(u.id), "exp": datetime.now(timezone.utc) + timedelta(hours=1)}, "kunci-lain", algorithm="HS256")

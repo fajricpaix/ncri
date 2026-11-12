@@ -43,13 +43,16 @@ _DUMMY = hash_password(secrets.token_hex(8))  # supaya waktu login tidak memboco
 # ---------- token ----------
 def make_token(user: m.User, now: datetime | None = None) -> str:
     now = now or datetime.now(timezone.utc)
-    return jwt.encode({"sub": str(user.id), "iat": now, "exp": now + timedelta(minutes=settings.token_ttl_minutes)},
+    return jwt.encode({"sub": str(user.id), "tv": user.token_version or 0, "iat": now,
+                       "exp": now + timedelta(minutes=settings.token_ttl_minutes)},
                       settings.auth_secret, algorithm="HS256")
 
 
-def read_token(token: str) -> uuid.UUID | None:
+def read_token(token: str) -> tuple[uuid.UUID, int] | None:
+    """Return (user_id, token_version) atau None bila tidak valid/kedaluwarsa."""
     try:
-        return uuid.UUID(jwt.decode(token, settings.auth_secret, algorithms=["HS256"])["sub"])
+        c = jwt.decode(token, settings.auth_secret, algorithms=["HS256"])
+        return uuid.UUID(c["sub"]), int(c.get("tv", 0))
     except Exception:
         return None
 
@@ -80,9 +83,9 @@ def csrf_guard(request: Request):
 
 def current_user(request: Request, db: Session = Depends(get_db)) -> m.User:
     token = request.cookies.get(COOKIE)
-    uid = read_token(token) if token else None
-    user = db.get(m.User, uid) if uid else None
-    if not user or not user.is_active:
+    parsed = read_token(token) if token else None
+    user = db.get(m.User, parsed[0]) if parsed else None
+    if not user or not user.is_active or user.token_version != parsed[1]:
         raise HTTPException(401, "belum login atau sesi berakhir")
     return user
 

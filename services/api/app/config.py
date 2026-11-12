@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     cookie_secure: bool = False        # True di HTTPS
     cookie_samesite: str = "lax"       # "none" bila web & API beda situs (wajib cookie_secure=True)
     login_rate_per_minute: int = 10
+    login_max_failures: int = 5          # gagal login per email dalam login_lock_minutes => dikunci sementara
+    login_lock_minutes: int = 15
+    trusted_proxy_hops: int = 0          # jumlah reverse proxy tepercaya di depan API (0 = langsung ke internet)
     # LLM: kunci hanya di backend. llm_provider: "" (nonaktif) | "fake" (contoh deterministik, dev) | "anthropic"
     llm_provider: str = ""
     llm_model: str = "claude-sonnet-5-5"
