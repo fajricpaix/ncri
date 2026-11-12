@@ -44,12 +44,11 @@ class UserPatch(BaseModel):
 @router.post("/auth/login", response_model=UserOut, dependencies=[Depends(login_limiter)])
 def login(body: LoginIn, response: Response, db: Session = DB):
     email = body.email.strip().lower()
-    if lockout.is_locked(db, email):  # sebelum hashing: percobaan saat terkunci tidak memakan CPU
+    if not lockout.reserve_attempt(db, email):  # atomik, sebelum hashing: terkunci = tidak memakan CPU
         raise HTTPException(429, f"terlalu banyak gagal login; coba lagi dalam {settings.login_lock_minutes} menit")
     user = db.scalar(select(m.User).where(m.User.email == email))
     ok = auth.verify_password(body.password, user.password_hash if user else auth._DUMMY)
     if not (user and ok and user.is_active):
-        lockout.record_failure(db, email)
         auth.audit(db, None, "auth.login_failed", "user", None, {"email": email[:100]})
         db.commit()
         raise HTTPException(401, "email atau kata sandi salah")

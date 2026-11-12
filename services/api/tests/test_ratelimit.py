@@ -40,26 +40,24 @@ def db():
         yield s
 
 
-def test_lock_after_max_failures_is_per_account_and_expires(db, monkeypatch):
+def test_attempts_are_reserved_up_to_the_limit_then_locked_per_account_and_expire(db, monkeypatch):
     monkeypatch.setattr(settings, "login_max_failures", 3)
     monkeypatch.setattr(settings, "login_lock_minutes", 15)
-    for i in range(3):
-        assert not lockout.is_locked(db, "A@x.id", now=T0 + timedelta(seconds=i))
-        lockout.record_failure(db, "a@x.id", now=T0 + timedelta(seconds=i))
-    assert lockout.is_locked(db, " A@X.id ", now=T0 + timedelta(minutes=5))      # email dinormalisasi
-    assert not lockout.is_locked(db, "b@x.id", now=T0 + timedelta(minutes=5))    # akun lain bebas
-    assert not lockout.is_locked(db, "a@x.id", now=T0 + timedelta(minutes=16))   # jendela lewat => terbuka
-    lockout.clear(db, "a@x.id")
-    assert not lockout.is_locked(db, "a@x.id", now=T0 + timedelta(minutes=5))    # login sukses menghapus
+    got = [lockout.reserve_attempt(db, "A@x.id", now=T0 + timedelta(seconds=i)) for i in range(5)]
+    assert got == [True, True, True, False, False]                                   # hanya 3 pemeriksaan sandi
+    assert lockout.reserve_attempt(db, "b@x.id", now=T0)                              # akun lain bebas
+    assert not lockout.reserve_attempt(db, " a@X.id ", now=T0 + timedelta(minutes=5)) # email dinormalisasi
+    assert lockout.reserve_attempt(db, "a@x.id", now=T0 + timedelta(minutes=16))      # jendela lewat => terbuka
+    lockout.clear(db, "a@x.id"); db.commit()
+    assert all(lockout.reserve_attempt(db, "a@x.id", now=T0 + timedelta(minutes=20)) for _ in range(3))  # sukses menghapus
 
 
 def test_flooding_random_emails_cannot_unlock_a_locked_account(db, monkeypatch):
-    """Regresi temuan review: eviksi memori dulu bisa membuang kunci korban."""
+    """Regresi review #2: eviksi memori dulu bisa membuang kunci korban."""
     monkeypatch.setattr(settings, "login_max_failures", 3)
     monkeypatch.setattr(settings, "login_lock_minutes", 15)
     for i in range(3):
-        lockout.record_failure(db, "korban@x.id", now=T0 + timedelta(seconds=i))
-    for i in range(20_000):  # jauh di atas batas lama (10.000 kunci)
-        lockout.record_failure(db, f"spam{i}@x.id", now=T0 + timedelta(seconds=10))
-    db.commit()
-    assert lockout.is_locked(db, "korban@x.id", now=T0 + timedelta(minutes=5))
+        assert lockout.reserve_attempt(db, "korban@x.id", now=T0 + timedelta(seconds=i))
+    for i in range(5_000):
+        lockout.reserve_attempt(db, f"spam{i}@x.id", now=T0 + timedelta(seconds=10))
+    assert not lockout.reserve_attempt(db, "korban@x.id", now=T0 + timedelta(minutes=5))

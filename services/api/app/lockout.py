@@ -1,38 +1,42 @@
-"""Penguncian login per akun. Disimpan di database (bukan memori): tidak ada eviksi yang bisa dipakai penyerang
-untuk membuka kunci korban dengan membanjiri email acak, dan berlaku lintas proses. Email tak terdaftar diperlakukan
-persis sama dengan yang terdaftar, jadi tidak membocorkan keberadaan akun.
+"""Penguncian login per akun, atomik. Hitungan di database (bukan memori): tidak bisa dihapus lewat banjir email acak,
+dan berlaku lintas proses. Email tak terdaftar diperlakukan persis sama dengan yang terdaftar (tidak membocorkan akun).
 
-Konsekuensi yang diterima: penyerang yang mengetahui email korban bisa menguncinya selama jendela waktu (DoS terbatas);
-dia tetap tidak bisa menebak sandi."""
+Percobaan DIRESERVASI sebelum sandi diperiksa: di bawah kunci advisory per email, hitung percobaan dalam jendela,
+tolak bila sudah penuh, kalau tidak catat percobaan ini lalu commit. Jadi permintaan paralel tidak bisa lolos
+bersamaan melewati batas (tidak ada celah cek-lalu-catat); paling banyak `login_max_failures` pengecekan sandi per
+jendela per email. Login sukses menghapus hitungan.
+
+Konsekuensi yang diterima: yang tahu email korban bisa menguncinya selama jendela (DoS terbatas); sandi tetap tidak
+bisa ditebak lebih dari batas itu."""
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, text
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models import LoginFailure
 
 
-def _now(now):
-    return now or datetime.now(timezone.utc)
-
-
 def _key(email: str) -> str:
     return email.strip().lower()[:254]
 
 
-def is_locked(db: Session, email: str, now: datetime | None = None) -> bool:
-    cutoff = _now(now) - timedelta(minutes=settings.login_lock_minutes)
+def reserve_attempt(db: Session, email: str, now: datetime | None = None) -> bool:
+    """True = boleh memeriksa sandi (percobaan sudah tercatat & di-commit). False = terkunci."""
+    now = now or datetime.now(timezone.utc)
+    key = _key(email)
+    window = timedelta(minutes=settings.login_lock_minutes)
+    if db.get_bind().dialect.name == "postgresql":
+        db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": key})  # lepas saat commit/rollback
+    db.execute(delete(LoginFailure).where(LoginFailure.created_at <= now - window))  # hanya yang sudah lewat jendela
     n = db.scalar(select(func.count()).select_from(LoginFailure)
-                  .where(LoginFailure.key == _key(email), LoginFailure.created_at > cutoff))
-    return n >= settings.login_max_failures
-
-
-def record_failure(db: Session, email: str, now: datetime | None = None):
-    now = _now(now)
-    db.add(LoginFailure(key=_key(email), created_at=now))
-    # hanya baris yang sudah lewat jendela yang dihapus, jadi kunci aktif tidak pernah hilang lebih awal
-    db.execute(delete(LoginFailure).where(LoginFailure.created_at <= now - timedelta(minutes=settings.login_lock_minutes)))
+                  .where(LoginFailure.key == key, LoginFailure.created_at > now - window))
+    if n >= settings.login_max_failures:
+        db.rollback()
+        return False
+    db.add(LoginFailure(key=key, created_at=now))
+    db.commit()
+    return True
 
 
 def clear(db: Session, email: str):
