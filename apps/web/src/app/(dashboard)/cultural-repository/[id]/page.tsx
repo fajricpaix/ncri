@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Card } from "@/components/ui/Card";
@@ -6,7 +7,7 @@ import { RiskBadge } from "@/components/ui/RiskBadge";
 import { RunRiskButton } from "@/features/overview/RunRiskButton";
 import { OriginBadge } from "@/components/ui/OriginBadge";
 import { AiPanel } from "@/features/ai/AiPanel";
-import { ObservationChart } from "@/features/cultural-objects/ObservationChart";
+import { ObservationChart } from "@/features/cultural-repository/ObservationChart";
 import { api, getMe, serverFetch } from "@/lib/api-server";
 import { can } from "@/lib/permissions";
 import type { CulturalObject, Indicator, Analysis, Observation, Risk } from "@/types/api";
@@ -59,7 +60,7 @@ function RiskPanel({ risk }: { risk: Risk }) {
   );
 }
 
-async function Detail({ params }: { params: PageProps<"/cultural-objects/[id]">["params"] }) {
+async function Detail({ params }: { params: PageProps<"/cultural-repository/[id]">["params"] }) {
   const { id } = await params;
   const res = await serverFetch(`/cultural-objects/${id}`);
   if (res.status === 404 || res.status === 422) notFound();
@@ -90,7 +91,7 @@ async function Detail({ params }: { params: PageProps<"/cultural-objects/[id]">[
         <OriginBadge origin={obj.data_origin} />
         <span className="text-sm text-slate-500">{obj.category} · verifikasi: {obj.verification_status}</span>
         {can(me.role, "analyze") && (
-          <Link href={`/cultural-objects/${id}/edit`} className="cap ml-auto rounded-lg px-3 py-1.5 text-sm ring-1 ring-slate-300 hover:bg-slate-50">Edit</Link>
+          <Link href={`/cultural-repository/${id}/edit`} className="cap ml-auto rounded-lg px-3 py-1.5 text-sm ring-1 ring-slate-300 hover:bg-slate-50">Edit</Link>
         )}
       </div>
       {obj.description && <p className="max-w-3xl text-sm text-slate-700">{obj.description}</p>}
@@ -125,14 +126,14 @@ async function Detail({ params }: { params: PageProps<"/cultural-objects/[id]">[
           </table>
         </Card>
       )}
-      <Link href="/cultural-objects" className="text-sm text-navy-2 hover:underline">← Kembali ke daftar</Link>
+      <Link href="/cultural-repository" className="text-sm text-navy-2 hover:underline">← Kembali ke daftar</Link>
     </div>
   );
 }
 
-export default function Page(props: PageProps<"/cultural-objects/[id]">) {
+export default function Page(props: PageProps<"/cultural-repository/[id]">) {
   return (
-    <Suspense fallback={<p className="text-sm text-slate-500">Memuat…</p>}>
+    <Suspense fallback={<PageLoader label="Memuat…" />}>
       <Detail params={props.params} />
     </Suspense>
   );

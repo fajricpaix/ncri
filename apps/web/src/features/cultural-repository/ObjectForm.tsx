@@ -38,7 +38,7 @@ export function ObjectForm({ initial, provinces, sources }: { initial?: Cultural
           : typeof detail === "string" ? detail : "Data belum valid, periksa lagi isian Anda.");
       }
       const saved: CulturalObject = await r.json();
-      router.push(`/cultural-objects/${saved.id}`);
+      router.push(`/cultural-repository/${saved.id}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal menyimpan");
@@ -96,7 +96,7 @@ export function ObjectForm({ initial, provinces, sources }: { initial?: Cultural
       </label>
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-risk-high">{error}</p>}
       <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
-        <Link href={initial ? `/cultural-objects/${initial.id}` : "/cultural-objects"} className="cap rounded-lg px-4 py-2 text-sm ring-1 ring-slate-300 hover:bg-slate-50">Batal</Link>
+        <Link href={initial ? `/cultural-repository/${initial.id}` : "/cultural-repository"} className="cap rounded-lg px-4 py-2 text-sm ring-1 ring-slate-300 hover:bg-slate-50">Batal</Link>
         <button disabled={busy} className="rounded-lg bg-navy px-5 py-2 text-sm font-semibold text-white disabled:opacity-60">
           {busy ? "Menyimpan…" : initial ? "Simpan perubahan" : "Tambah objek"}
         </button>

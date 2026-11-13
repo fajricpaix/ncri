@@ -1,6 +1,7 @@
 import { Suspense } from "react";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { Card } from "@/components/ui/Card";
-import { ObjectForm } from "@/features/cultural-objects/ObjectForm";
+import { ObjectForm } from "@/features/cultural-repository/ObjectForm";
 import { api, getMe } from "@/lib/api-server";
 import { can } from "@/lib/permissions";
 import type { DataSource, Region } from "@/types/api";
@@ -15,7 +16,7 @@ async function Content() {
 export default function NewObject() {
   return (
     <Card title="Tambah Objek Budaya">
-      <Suspense fallback={<p className="text-sm text-slate-500">Memuat…</p>}><Content /></Suspense>
+      <Suspense fallback={<PageLoader label="Memuat…" />}><Content /></Suspense>
     </Card>
   );
 }
