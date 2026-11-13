@@ -34,7 +34,7 @@ async function List() {
 export default function Recommendations() {
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">Root Cause & Recommendations</h2>
+      <h2 className="text-xl font-bold">Recommendation Engine</h2>
       <p className="text-sm text-slate-600">Semua rekomendasi berstatus draft sampai disetujui manusia.</p>
       <Card><Suspense fallback={<p className="text-sm text-slate-500">Memuat…</p>}><List /></Suspense></Card>
     </div>

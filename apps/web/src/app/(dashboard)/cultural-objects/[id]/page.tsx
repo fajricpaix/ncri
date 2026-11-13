@@ -102,7 +102,7 @@ async function Detail({ params }: { params: PageProps<"/cultural-objects/[id]">[
       <Card title="AI Insight (draft)"><AiPanel objectId={id} analyses={analyses} /></Card>
       <Card title="Riwayat Indikator">
         {obs.length ? <ObservationChart years={years} series={series} /> : (
-          <p className="text-sm text-slate-600">Belum ada observasi indikator. Import CSV di halaman Data Sources.</p>
+          <p className="text-sm text-slate-600">Belum ada observasi indikator. Import CSV di halaman Data Submission.</p>
         )}
       </Card>
       {obs.length > 0 && (

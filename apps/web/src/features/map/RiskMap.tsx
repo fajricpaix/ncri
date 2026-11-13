@@ -3,7 +3,25 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
 import type { MapLevel, ProvinceSummary } from "@/types/api";
-import { LEVEL_COLOR, LEVEL_LABEL } from "./levels";
+import { LEVEL_LABEL } from "./levels";
+
+// Palet khusus peta (latar navy gelap): lebih jenuh agar kontras. Badge/chart lain tetap pakai LEVEL_COLOR.
+const MAP_BG = "#0c1f45";
+// Gradasi per skor rata-rata provinsi; titik 40 dan 70 = ambang level (risk.py), jadi warna tetap konsisten dengan label.
+const RAMP: [number, string][] = [[0, "#3fb14a"], [39, "#8fd23f"], [40, "#f5c230"], [55, "#f58a2a"], [70, "#ef2b21"], [100, "#c71f18"]];
+const hex = (c: string) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+function rampColor(score: number): string {
+  const v = Math.min(100, Math.max(0, score));
+  const i = RAMP.findIndex(([x]) => v <= x);
+  if (i <= 0) return RAMP[0][1];
+  const [x0, c0] = RAMP[i - 1], [x1, c1] = RAMP[i];
+  const t = (v - x0) / (x1 - x0), a = hex(c0), b = hex(c1);
+  return "#" + a.map((n, k) => Math.round(n + (b[k] - n) * t).toString(16).padStart(2, "0")).join("");
+}
+
+export const MAP_COLOR: Record<MapLevel, string> = {
+  HIGH: "#ef2b21", MEDIUM: "#f5c230", LOW: "#4fc24b", INSUFFICIENT_DATA: "#7b88a8", NO_DATA: "#1d3366",
+};
 
 type Props = {
   provinces: ProvinceSummary[];
@@ -34,7 +52,7 @@ export function RiskMap({ provinces, selected = null, levelFilter = "ALL", onSel
     try {
       map = new maplibregl.Map({
         container: box.current,
-        style: { version: 8, sources: {}, layers: [{ id: "bg", type: "background", paint: { "background-color": "#dbe7f3" } }] },
+        style: { version: 8, sources: {}, layers: [{ id: "bg", type: "background", paint: { "background-color": MAP_BG } }] },
         bounds: BOUNDS, fitBoundsOptions: { padding: 8 }, attributionControl: false, dragRotate: false,
       });
     } catch {
@@ -58,15 +76,17 @@ export function RiskMap({ provinces, selected = null, levelFilter = "ALL", onSel
       const gj = await (await fetch("/geo/idn-adm1.json")).json();
       for (const f of gj.features) {
         const p = byCode.get(f.properties.code);
-        f.properties = { code: f.properties.code, level: p?.level ?? "NO_DATA" };
+        const level = p?.level ?? "NO_DATA";
+        const scored = p?.avg_score != null && (level === "HIGH" || level === "MEDIUM" || level === "LOW");
+        f.properties = { code: f.properties.code, level, color: scored ? rampColor(p!.avg_score!) : MAP_COLOR[level as MapLevel] };
       }
       map.addSource("prov", { type: "geojson", data: gj });
       map.addLayer({ id: "fill", type: "fill", source: "prov", paint: {
-        "fill-color": ["match", ["get", "level"], ...Object.entries(LEVEL_COLOR).flat(), "#e2e8f0"] as never,
-        "fill-opacity": 0.9,
+        "fill-color": ["get", "color"],
+        "fill-opacity": 1,
       } });
-      map.addLayer({ id: "line", type: "line", source: "prov", paint: { "line-color": "#ffffff", "line-width": 0.8 } });
-      map.addLayer({ id: "sel", type: "line", source: "prov", filter: ["==", ["get", "code"], ""], paint: { "line-color": "#0b1f4b", "line-width": 3 } });
+      map.addLayer({ id: "line", type: "line", source: "prov", paint: { "line-color": "#ffffff", "line-opacity": 0.45, "line-width": 0.5 } });
+      map.addLayer({ id: "sel", type: "line", source: "prov", filter: ["==", ["get", "code"], ""], paint: { "line-color": "#ffffff", "line-width": 2.5 } });
       ready.current = true;
       sync.current();
     });
@@ -96,7 +116,7 @@ export function RiskMap({ provinces, selected = null, levelFilter = "ALL", onSel
       if (!ready.current) return;
       map.setFilter("sel", ["==", ["get", "code"], selected ?? ""]);
       map.setPaintProperty("fill", "fill-opacity",
-        levelFilter === "ALL" ? 0.9 : ["case", ["==", ["get", "level"], levelFilter], 0.95, 0.15]);
+        levelFilter === "ALL" ? 1 : ["case", ["==", ["get", "level"], levelFilter], 1, 0.2]);
     };
     sync.current = apply;
     apply();
@@ -110,9 +130,9 @@ export function RiskMap({ provinces, selected = null, levelFilter = "ALL", onSel
 export function Legend() {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs" aria-label="Legenda peta">
-      {(Object.keys(LEVEL_COLOR) as MapLevel[]).map((l) => (
+      {(Object.keys(MAP_COLOR) as MapLevel[]).map((l) => (
         <li key={l} className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-sm" style={{ background: LEVEL_COLOR[l] }} aria-hidden />
+          <span className="h-3 w-3 rounded-sm" style={{ background: MAP_COLOR[l] }} aria-hidden />
           {LEVEL_LABEL[l]}
         </li>
       ))}

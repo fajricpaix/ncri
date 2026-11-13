@@ -27,7 +27,7 @@ async function Sources() {
 export default function DataSources() {
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">Data Sources</h2>
+      <h2 className="text-xl font-bold">Data Submission</h2>
       <Card title="Sumber Data" className="overflow-x-auto">
         <Suspense fallback={<p className="text-sm text-slate-500">Memuat…</p>}><Sources /></Suspense>
       </Card>

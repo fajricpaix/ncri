@@ -46,7 +46,7 @@ export default function CulturalObjects() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-xl font-bold">Cultural Objects</h2>
+        <h2 className="text-xl font-bold">Cultural Repository</h2>
         <Suspense fallback={null}><AddButton /></Suspense>
       </div>
       <Card className="overflow-x-auto">
