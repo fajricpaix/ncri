@@ -1,15 +1,19 @@
+import { StatCard, toneOf } from "@/components/ui/StatCard";
 import Link from "next/link";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { Suspense } from "react";
 import { AlertTriangle, AlertCircle, Gauge, Landmark, ShieldCheck, Database } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { SimulatedBadge } from "@/components/ui/SimulatedBadge";
-import { RiskBadge } from "@/components/ui/RiskBadge";
+import { ObjectThumb } from "@/features/ai-predictive-risk-engine/ObjectThumb";
 import { MapCard } from "@/features/map/MapCard";
 import { Focus } from "@/features/ai-predictive-risk-engine/Focus";
 import { Scenario } from "@/features/ai-predictive-risk-engine/Scenario";
 import { projectScore, simProb } from "@/features/ai-predictive-risk-engine/sim";
 import { api } from "@/lib/api-server";
 import type { Overview, PredictionStatus, ProvinceSummary } from "@/types/api";
+
+const PILL = { HIGH: "bg-risk-high", MEDIUM: "bg-risk-mid", LOW: "bg-risk-low", INSUFFICIENT_DATA: "bg-risk-none" } as const;
 
 async function Content({ searchParams }: { searchParams: PageProps<"/ai-predictive-risk-engine">["searchParams"] }) {
   const [s, d, provinces, sp] = await Promise.all([api<PredictionStatus>("/analytics/prediction/status"), api<Overview>("/dashboard/overview"), api<ProvinceSummary[]>("/map/provinces"), searchParams]);
@@ -31,7 +35,6 @@ async function Content({ searchParams }: { searchParams: PageProps<"/ai-predicti
     { label: "Akurasi Model", value: s.passed ? "Lulus" : "Belum Ada", icon: Gauge, cls: "text-purple-700 bg-purple-50" },
     { label: "Objek Dinilai", value: d.assessed_objects.toLocaleString("id-ID"), icon: Database, cls: "text-navy-2 bg-blue-50" },
   ];
-  const q = (o: string) => `/ai-predictive-risk-engine?${new URLSearchParams({ ...(prov && { prov }), obj: o })}`;
 
   return (
     <div className="space-y-4">
@@ -41,43 +44,43 @@ async function Content({ searchParams }: { searchParams: PageProps<"/ai-predicti
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
-        {kpis.map(({ label, value, icon: Icon, cls }) => (
-          <div key={label} className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-            <span className={`rounded-2xl p-3 ${cls}`}><Icon size={22} aria-hidden /></span>
-            <div><p className="cap text-xs text-slate-500">{label}</p><p className="text-2xl font-bold">{value}</p></div>
-          </div>
-        ))}
+        {kpis.map(({ label, value, icon, cls }) => <StatCard key={label} icon={icon} tone={toneOf(cls)} label={label} value={value} />)}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] [&>*]:min-w-0">
-        <Card title="Peta Risiko Saat Ini (Baseline)"><MapCard provinces={provinces} selected={prov || null} level="ALL" /></Card>
+      <div className="grid gap-4 xl:grid-cols-4 [&>*]:min-w-0">
+        <Card title="Peta Risiko Saat Ini (Baseline)" className="xl:col-span-3"><MapCard provinces={provinces} selected={prov || null} level="ALL" /></Card>
         {selected
-          ? <Suspense fallback={<p className="text-sm text-slate-500">Memuat detail…</p>}><Focus id={selected.id} province={selected.province} /></Suspense>
+          ? <Suspense fallback={<PageLoader label="Memuat detail…" />}><Focus id={selected.id} province={selected.province} /></Suspense>
           : <Card title="Detail Objek"><p className="text-sm text-slate-600">Belum ada objek yang dinilai.</p></Card>}
+        {selected && <Scenario key={selected.id} base={base2028} />}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[1fr_1fr_2fr] [&>*]:min-w-0">
-        {selected && <Scenario key={selected.id} base={base2028} />}
-        <Card title="Daftar Objek Skor Tertinggi" action={<SimulatedBadge />} className="overflow-x-auto lg:col-span-2 xl:col-span-1">
-          <table className="w-full text-left text-sm">
-            <thead className="text-xs text-slate-500"><tr><th className="py-1.5">#</th><th>Objek</th><th>Skor</th><th>Prediksi 2028</th><th>Prob.</th><th /></tr></thead>
+      <div className="[&>*]:min-w-0">
+        <Card title="Daftar Objek Skor Tertinggi" action={<span className="flex items-center gap-3"><SimulatedBadge /><Link href="/cultural-risk-assessment" className="cap text-xs font-semibold hover:underline">Lihat Semua →</Link></span>} className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="text-xs text-navy"><tr><th className="py-2 pr-4">Peringkat</th><th className="pr-4">Objek Budaya</th><th className="pr-4">Provinsi</th><th className="text-center">Skor Saat Ini</th><th className="text-center">Prediksi 2028</th><th className="text-center">Probabilitas</th><th className="text-center">Aksi</th></tr></thead>
             <tbody>
-              {top.map((r, i) => (
-                <tr key={r.id} className="border-t border-slate-100">
-                  <td className="py-2 font-bold">{i + 1}</td>
-                  <td><span className="raw font-semibold">{r.name}</span><br /><span className="raw text-xs text-slate-500">{r.province}</span></td>
-                  <td><RiskBadge level={r.level} /> {r.score?.toFixed(0)}</td>
-                  <td className="text-slate-500">{projectScore(r.score ?? 0)[3].mid}</td>
-                  <td className="text-slate-500">{simProb(r.score ?? 0)}%</td>
-                  <td><Link href={q(r.id)} className="cap rounded-lg bg-gold-soft px-2.5 py-1 text-xs font-semibold text-navy hover:brightness-95">Detail</Link></td>
-                </tr>
-              ))}
+              {top.map((r, i) => {
+                const sc = r.score ?? 0;
+                return (
+                  <tr key={r.id} className="border-t border-slate-100">
+                    <td className="py-1.5 pr-4"><span className="grid h-9 w-9 place-items-center rounded-xl bg-red-50 text-lg font-bold text-risk-high">{i + 1}</span></td>
+                    <td className="pr-4"><div className="flex items-center gap-3"><ObjectThumb name={r.name} size={44} /><span className="raw font-bold text-navy">{r.name}</span></div></td>
+                    <td className="raw pr-4">{r.province}</td>
+                    <td className="text-center"><span className={`inline-block min-w-11 rounded-md px-2.5 py-1 font-bold text-white ${PILL[r.level]}`}>{sc.toFixed(0)}</span></td>
+                    <td className="text-center"><span title="SIMULATED" className="inline-block min-w-11 rounded-md bg-slate-400 px-2.5 py-1 font-bold text-white">{projectScore(sc)[3].mid}</span></td>
+                    <td className="text-center font-bold text-slate-500" title="SIMULATED">{simProb(sc)}%</td>
+                    <td className="text-center"><Link href={`/ai-predictive-risk-engine/${r.id}`} className="cap btn-gold px-3 py-1.5 text-xs font-semibold text-navy shadow-sm">Detail</Link></td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-          <p className="mt-2 text-xs text-slate-500">Skor = baseline nyata. Kolom Prediksi 2028 dan Prob. = SIMULATED.</p>
+          <p className="mt-2 text-xs text-slate-500">Skor saat ini = baseline nyata (merah = tinggi). Prediksi 2028 (abu-abu) dan Probabilitas = SIMULATED. Foto: Wikipedia, tanpa foto = ikon.</p>
         </Card>
       </div>
 
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,1fr)] [&>*]:min-w-0">
       <Card title="Kesiapan Data untuk Prediksi" className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="text-xs uppercase text-slate-500">
@@ -107,13 +110,14 @@ async function Content({ searchParams }: { searchParams: PageProps<"/ai-predicti
           <div><dt className="font-semibold">Evaluasi</dt><dd className="text-slate-700">Latih pada periode lampau, uji pada periode terbaru (tanpa kebocoran waktu); laporkan Brier, AUC, MAE, dan kalibrasi. Dokumentasi bias dan batasan: <code>docs/model-card.md</code>.</dd></div>
         </dl>
       </Card>
+      </div>
     </div>
   );
 }
 
 export default function AiPredictiveRiskEnginePage(props: PageProps<"/ai-predictive-risk-engine">) {
   return (
-    <Suspense fallback={<p className="text-sm text-slate-500">Memuat…</p>}>
+    <Suspense fallback={<PageLoader label="Memuat…" />}>
       <Content searchParams={props.searchParams} />
     </Suspense>
   );

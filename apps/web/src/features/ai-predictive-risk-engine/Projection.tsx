@@ -8,11 +8,11 @@ export function Projection({ score, year }: { score: number; year: number }) {
   const xs = p.map((d) => String(year + d.y));
   return (
     <EChart
-      height={220}
+      height={270}
       option={{
         tooltip: { trigger: "axis" },
         legend: { bottom: 0, data: ["Skor Saat Ini", "Proyeksi (Simulasi)"] },
-        grid: { left: 36, right: 16, top: 16, bottom: 40 },
+        grid: { left: 36, right: 16, top: 28, bottom: 40 },
         xAxis: { type: "category", data: xs },
         yAxis: { type: "value", min: 0, max: 100 },
         series: [
