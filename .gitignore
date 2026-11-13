@@ -11,3 +11,30 @@ apps/web/public/vendor/
 .pytest_cache/
 *.pyc
 .claude/settings.local.json
+
+# env & secrets (contoh env tetap masuk)
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+id_rsa*
+
+# tooling lokal / pihak ketiga
+.claude/skills/
+.claude/settings.local.json
+graphify-out/
+.mcp.json
+.vercel
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# artefak build & tes
+.coverage
+coverage/
+*.log
+*.tsbuildinfo
+next-env.d.ts
+.mypy_cache/
+.ruff_cache/
