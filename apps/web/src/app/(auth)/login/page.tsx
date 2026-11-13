@@ -45,7 +45,7 @@ export default function Login() {
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-2 focus:outline-gold" />
           </label>
           <label className="block text-sm font-medium">
-            Kata sandi
+            Kata Sandi
             <input type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-2 focus:outline-gold" />
           </label>

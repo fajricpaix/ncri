@@ -32,3 +32,6 @@ body {
   .app-main { overflow: visible !important; padding: 0 !important; }
   body { background: #fff; }
 }
+
+/* Teks tombol: awal tiap kata kapital */
+button { text-transform: capitalize; }

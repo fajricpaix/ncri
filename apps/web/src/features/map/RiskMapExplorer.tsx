@@ -52,7 +52,7 @@ export function RiskMapExplorer({ provinces, initial }: { provinces: ProvinceSum
                 <ul className="divide-y divide-slate-100">
                   {sel.objects.map((o) => (
                     <li key={o.id} className="flex items-center justify-between gap-2 py-2">
-                      <Link href={`/cultural-objects/${o.id}`} className="font-medium text-navy-2 hover:underline">{o.name}</Link>
+                      <Link href={`/cultural-objects/${o.id}`} className="font-medium normal-case text-navy-2 hover:underline">{o.name}</Link>
                       <span className="flex items-center gap-2">{o.score !== null && <b>{o.score.toFixed(0)}</b>}<RiskBadge level={o.level} /></span>
                     </li>
                   ))}
@@ -71,7 +71,7 @@ export function RiskMapExplorer({ provinces, initial }: { provinces: ProvinceSum
           <tbody>
             {rows.map((p) => (
               <tr key={p.code} className={`border-t border-slate-100 ${p.code === selected ? "bg-gold-soft/40" : ""}`}>
-                <td className="py-2"><button onClick={() => setSelected(p.code)} className="font-medium text-navy-2 hover:underline">{p.name}</button></td>
+                <td className="py-2"><button onClick={() => setSelected(p.code)} className="font-medium normal-case text-navy-2 hover:underline">{p.name}</button></td>
                 <td>{p.n_objects}</td>
                 <td>{p.avg_score ?? "—"}</td>
                 <td>{p.level === "NO_DATA" ? <span className="text-xs text-slate-500">Tidak ada objek</span> : <RiskBadge level={p.level as never} />}</td>

@@ -73,7 +73,7 @@ async function Content() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card id="peta" title="Peta Risiko Nasional" className="scroll-mt-16 lg:col-span-2" action={<Link href="/risk-map" className="text-xs underline">Buka peta penuh</Link>}>
+        <Card id="peta" title="Peta Risiko Nasional" className="scroll-mt-16 lg:col-span-2" action={<Link href="/risk-map" className="text-xs underline">Buka Peta Penuh</Link>}>
           <OverviewMap provinces={provinces} />
         </Card>
         <Card title="Distribusi Risiko"><RiskChart distribution={d.distribution} total={d.total_objects} /></Card>
@@ -85,7 +85,7 @@ async function Content() {
             ? <TrendChart trend={d.trend} />
             : <p className="text-sm text-slate-600">Tren butuh minimal dua periode penilaian.</p>}
         </Card>
-        <Card title="Early Warning Terbuka" action={<Link href="/early-warnings" className="text-xs underline">Lihat semua</Link>}>
+        <Card title="Early Warning Terbuka" action={<Link href="/early-warnings" className="text-xs underline">Lihat Semua</Link>}>
           <ul className="space-y-3">
             {([["HIGH", "Peringatan tingkat tinggi"], ["MEDIUM", "Perubahan tajam perlu diperiksa"], ["LOW", "Perlu verifikasi data"]] as const).map(([k, text]) => (
               <li key={k} className="flex items-center gap-3">
