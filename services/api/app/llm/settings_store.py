@@ -5,6 +5,8 @@ Kunci enkripsi diturunkan dari AUTH_SECRET. Mengganti AUTH_SECRET membuat kunci 
 """
 import base64
 import hashlib
+import json
+from datetime import datetime, timezone
 
 from cryptography.fernet import Fernet, InvalidToken
 from sqlalchemy.orm import Session
@@ -60,8 +62,23 @@ def save(db: Session, provider: str, model: str | None, api_key: str | None):
     _put(db, "llm.model", model or None)
     if api_key:
         _put(db, "llm.api_key", _fernet().encrypt(api_key.encode()).decode())
+    _put(db, "llm.last_test", None)  # konfigurasi berubah => hasil tes lama tidak relevan
 
 
 def clear(db: Session):
-    for k in ("llm.provider", "llm.model", "llm.api_key"):
+    for k in ("llm.provider", "llm.model", "llm.api_key", "llm.last_test"):
         _put(db, k, None)
+
+
+def record_test(db: Session, ok: bool, message: str):
+    _put(db, "llm.last_test", json.dumps({"ok": ok, "message": message[:300], "at": datetime.now(timezone.utc).isoformat()}))
+
+
+def last_test(db: Session) -> dict | None:
+    raw = _get(db, "llm.last_test")
+    return json.loads(raw) if raw else None
+
+
+def updated_at(db: Session):
+    row = db.get(m.AppSetting, "llm.provider")
+    return row.updated_at if row else None

@@ -196,11 +196,14 @@ class LlmSettingsIn(BaseModel):
 def _settings_view(db: Session) -> dict:
     cfg = store.load(db)
     p = cfg["provider"] or settings.llm_provider
-    return {"provider": p, "model": cfg["model"] or (store.DEFAULT_MODEL.get(p) if cfg["provider"] else settings.llm_model),
+    saved = cfg["model"]
+    model = (saved if saved in store.MODELS.get(p, []) else store.DEFAULT_MODEL.get(p)) if cfg["provider"] else settings.llm_model
+    return {"provider": p, "model": model,
             "source": "database" if cfg["provider"] else "env",
             "api_key_set": bool(cfg["api_key"] or settings.llm_api_key),
             "api_key_hint": f"…{cfg['api_key'][-4:]}" if cfg["api_key"] else None,  # kunci tidak pernah dikirim balik
-            "default_models": store.DEFAULT_MODEL, "models": store.MODELS}
+            "default_models": store.DEFAULT_MODEL, "models": store.MODELS,
+            "updated_at": store.updated_at(db), "last_test": store.last_test(db)}
 
 
 @router.get("/admin/llm-settings")
@@ -231,7 +234,7 @@ def reset_llm_settings(admin: m.User = auth.ADMIN, db: Session = DB):
 
 @router.post("/admin/llm-settings/test", dependencies=[Depends(rate_limit)])
 async def test_llm_settings(_: m.User = auth.ADMIN, db: Session = DB):
-    """Satu panggilan kecil ke provider (tanpa data NCRI) untuk memastikan kunci & model valid."""
+    """Satu panggilan kecil ke provider (tanpa data NCRI) untuk memastikan kunci & model valid. Hasilnya disimpan."""
     try:
         p = get_provider(db)
         if p.name == "fake":
@@ -239,5 +242,9 @@ async def test_llm_settings(_: m.User = auth.ADMIN, db: Session = DB):
         out = await p.generate_structured("Balas JSON {\"ok\": true}.", {"ping": "test"},
                                           {"type": "object", "properties": {"ok": {"type": "boolean"}}, "required": ["ok"]})
     except LLMError as e:
+        store.record_test(db, False, str(e))
+        db.commit()
         raise HTTPException(502, str(e))
+    store.record_test(db, True, f"{p.name} / {p.model} merespons dengan benar")
+    db.commit()
     return {"ok": True, "provider": p.name, "model": p.model, "reply": out}
