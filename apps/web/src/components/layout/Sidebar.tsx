@@ -3,16 +3,16 @@ import { AnimatedLogo } from "./AnimatedLogo";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCan } from "@/lib/user-context";
-import { BatikOrnament } from "./HeaderArt";
 import { NAV } from "./nav";
+import { SidebarArt } from "./SidebarArt";
 
 export function Sidebar({ footer }: { footer?: React.ReactNode }) {
   const path = usePathname();
   const isAdmin = useCan("admin");
   return (
     <nav aria-label="Navigasi utama" className="relative flex h-full w-64 flex-col overflow-hidden bg-navy text-white">
-      <BatikOrnament />
-      <Link href="/" className="flex items-center gap-3 h-[84px] shrink-0 border-b border-white/10 px-4">
+      <SidebarArt path={path} />
+      <Link href="/" className="flex items-center gap-3 h-[84px] shrink-0 border-b border-r border-white/10 px-4">
         <AnimatedLogo />
         <span className="leading-tight">
           <span className="block text-xl font-extrabold tracking-wide">NCRI</span>
@@ -38,7 +38,7 @@ export function Sidebar({ footer }: { footer?: React.ReactNode }) {
           );
         })}
       </ul>
-      <div className="relative border-t border-white/10 p-3 text-xs text-white/70">{footer}</div>
+      <div className="relative border-t border-white/10 bg-navy/70 p-3 text-xs text-white/70 backdrop-blur-sm">{footer}</div>
     </nav>
   );
 }
