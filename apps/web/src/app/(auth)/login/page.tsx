@@ -37,7 +37,7 @@ export default function Login() {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-navy p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
-        <Image src="/brand/ncri-logo.svg" alt="NCRI — National Cultural Risk Intelligence" width={340} height={113} unoptimized className="mx-auto" />
+        <Image src="/brand/ncri-logo.svg" alt="NCRI — National Cultural Risk Intelligence" width={340} height={113} unoptimized loading="eager" className="mx-auto" />
         <form onSubmit={submit} className="mt-6 space-y-4">
           <label className="block text-sm font-medium">
             Email
