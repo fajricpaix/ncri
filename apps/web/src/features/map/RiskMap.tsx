@@ -42,6 +42,13 @@ export function RiskMap({ provinces, selected = null, levelFilter = "ALL", onSel
       return;
     }
     mapRef.current = map;
+    // Zoom-out dikunci di ukuran "pas kanvas" supaya peta tidak mengecil sampai hilang
+    const lockMinZoom = () => {
+      const z = map.cameraForBounds(BOUNDS, { padding: 8 })?.zoom;
+      if (z !== undefined) map.setMinZoom(z);
+    };
+    lockMinZoom();
+    map.on("resize", lockMinZoom);
     map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: "Batas provinsi 2017 © OpenStreetMap contributors (ODbL) via geoBoundaries" }));
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
     const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });

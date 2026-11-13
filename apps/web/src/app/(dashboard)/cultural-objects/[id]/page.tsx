@@ -17,12 +17,12 @@ function RiskPanel({ risk }: { risk: Risk }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-6">
         <div>
-          <p className="text-xs text-slate-500">Skor risiko</p>
+          <p className="cap text-xs text-slate-500">Skor risiko</p>
           <p className="text-3xl font-bold">{risk.risk_score === null ? "—" : risk.risk_score.toFixed(0)}<span className="text-base font-normal text-slate-500"> / 100</span></p>
         </div>
         <RiskBadge level={risk.risk_level} />
         <div title="Seberapa lengkap, mutakhir, dan terverifikasi bukti pendukung. Terpisah dari skor risiko.">
-          <p className="text-xs text-slate-500">Data confidence</p>
+          <p className="cap text-xs text-slate-500">Data confidence</p>
           <p className="text-3xl font-bold">{f2(risk.data_confidence)}</p>
         </div>
         <p className="text-xs text-slate-500">
@@ -86,11 +86,11 @@ async function Detail({ params }: { params: PageProps<"/cultural-objects/[id]">[
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-xl font-bold">{obj.name}</h2>
+        <h2 className="raw text-xl font-bold">{obj.name}</h2>
         <OriginBadge origin={obj.data_origin} />
         <span className="text-sm text-slate-500">{obj.category} · verifikasi: {obj.verification_status}</span>
         {can(me.role, "analyze") && (
-          <Link href={`/cultural-objects/${id}/edit`} className="ml-auto rounded-lg px-3 py-1.5 text-sm ring-1 ring-slate-300 hover:bg-slate-50">Edit</Link>
+          <Link href={`/cultural-objects/${id}/edit`} className="cap ml-auto rounded-lg px-3 py-1.5 text-sm ring-1 ring-slate-300 hover:bg-slate-50">Edit</Link>
         )}
       </div>
       {obj.description && <p className="max-w-3xl text-sm text-slate-700">{obj.description}</p>}

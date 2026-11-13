@@ -24,7 +24,7 @@ export function RiskMapExplorer({ provinces, initial }: { provinces: ProvinceSum
               <span className="sr-only">Filter tingkat risiko</span>
               <select value={filter} onChange={(e) => setFilter(e.target.value as MapLevel | "ALL")}
                 className="rounded-md bg-white/10 px-2 py-1 text-white">
-                {FILTERS.map((f) => <option key={f} value={f} className="text-black">{f === "ALL" ? "Semua tingkat" : LEVEL_LABEL[f]}</option>)}
+                {FILTERS.map((f) => <option key={f} value={f} className="text-black">{f === "ALL" ? "Semua Tingkat" : LEVEL_LABEL[f]}</option>)}
               </select>
             </label>
           }>

@@ -22,13 +22,13 @@ export function Topbar({ menu }: { menu?: React.ReactNode }) {
   }
 
   return (
-    <header className="relative flex items-center gap-3 overflow-hidden bg-navy px-4 py-3 text-white lg:px-6">
+    <header className="relative flex items-center gap-3 h-[84px] overflow-hidden bg-navy px-4 text-white lg:px-6">
       <HeaderArt />
       {menu}
       <span className="relative hidden rounded-xl bg-white/10 p-2 text-gold ring-1 ring-gold/60 sm:block"><PageIcon size={26} aria-hidden /></span>
       <div className="relative min-w-0 flex-1">
         <h1 className="truncate text-lg font-bold lg:text-2xl">{page.label}</h1>
-        <p className="hidden truncate text-xs text-white/75 sm:block">{page.subtitle}</p>
+        <p className="cap hidden truncate text-xs text-white/75 sm:block">{page.subtitle}</p>
       </div>
       <span className="relative"><SimulatedBadge /></span>
       <label className="relative hidden md:block">

@@ -39,7 +39,7 @@ async function List() {
 async function AddButton() {
   const me = await getMe();
   if (!can(me.role, "analyze")) return null;
-  return <Link href="/cultural-objects/new" className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white">+ Tambah objek</Link>;
+  return <Link href="/cultural-objects/new" className="cap rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white">+ Tambah objek</Link>;
 }
 
 export default function CulturalObjects() {

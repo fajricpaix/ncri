@@ -33,5 +33,12 @@ body {
   body { background: #fff; }
 }
 
-/* Teks tombol: awal tiap kata kapital */
-button { text-transform: capitalize; }
+/* Teks UI statis (judul, subjudul, label, tombol): awal tiap kata kapital */
+h1, h2, h3, h4, th, label, legend, summary, button, .cap { text-transform: capitalize; }
+/* Data dari database ditampilkan apa adanya */
+.raw { text-transform: none; }
+
+/* Scroll halus untuk anchor tab di area konten */
+@media (prefers-reduced-motion: no-preference) {
+  .app-main { scroll-behavior: smooth; }
+}

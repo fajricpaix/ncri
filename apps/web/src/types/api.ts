@@ -83,7 +83,7 @@ export type ExecutiveReport = {
 };
 
 export type PredictionStatus = {
-  passed: boolean; reasons: string[]; target: string; baseline: string;
+  passed: boolean; excluded_simulated: number; reasons: string[]; target: string; baseline: string;
   requirements: { label: string; current: number; needed: number; met: boolean }[];
   thresholds: Record<string, number>;
 };

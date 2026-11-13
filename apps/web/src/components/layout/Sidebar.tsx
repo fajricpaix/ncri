@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { AnimatedLogo } from "./AnimatedLogo";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCan } from "@/lib/user-context";
@@ -12,8 +12,8 @@ export function Sidebar({ footer }: { footer?: React.ReactNode }) {
   return (
     <nav aria-label="Navigasi utama" className="relative flex h-full w-64 flex-col overflow-hidden bg-navy text-white">
       <BatikOrnament />
-      <Link href="/" className="flex items-center gap-3 border-b border-white/10 px-4 py-4">
-        <Image src="/brand/ncri-icon-dark.svg" alt="" width={52} height={44} unoptimized />
+      <Link href="/" className="flex items-center gap-3 h-[84px] shrink-0 border-b border-white/10 px-4">
+        <AnimatedLogo />
         <span className="leading-tight">
           <span className="block text-xl font-extrabold tracking-wide">NCRI</span>
           <span className="block text-[11px] text-white/70">National Cultural Risk Intelligence</span>
