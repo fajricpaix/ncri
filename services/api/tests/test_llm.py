@@ -105,3 +105,46 @@ def test_fake_assistant_passes_guardrail_and_refuses_when_nothing_is_scored():
     empty = {**A_PAYLOAD, "objects": [{**A_PAYLOAD["objects"][0], "score": None}]}
     raw2 = asyncio.run(FakeProvider().generate_structured("", empty, {}))
     assert raw2["answerable"] is False and raw2["evidence_refs"] == []
+
+
+def test_gemini_provider_sends_schema_in_header_auth_and_parses_json():
+    from app.llm.provider import GeminiProvider
+    seen = {}
+
+    def handler(req):
+        seen["h"], seen["b"], seen["url"] = req.headers, __import__("json").loads(req.content), str(req.url)
+        return httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": '{"summary": "ok"}'}]}}]})
+
+    p = GeminiProvider("KUNCI", "gemini-2.5-flash", client=httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    assert asyncio.run(p.generate_structured("sys", {"a": 1}, {"type": "object"})) == {"summary": "ok"}
+    assert seen["h"]["x-goog-api-key"] == "KUNCI" and "KUNCI" not in seen["url"]
+    assert seen["b"]["generationConfig"]["responseJsonSchema"] == {"type": "object"}
+    assert seen["b"]["systemInstruction"]["parts"][0]["text"] == "sys"
+
+
+def test_gemini_errors_do_not_leak_key_and_explain_quota():
+    from app.llm.provider import GeminiProvider
+    p = GeminiProvider("RAHASIA", "m", client=httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(429, text="RAHASIA"))))
+    with pytest.raises(LLMError) as e:
+        asyncio.run(p.generate_structured("s", {}, {}))
+    assert "RAHASIA" not in str(e.value) and "kuota" in str(e.value)
+
+
+def test_api_key_is_encrypted_at_rest_and_db_setting_overrides_env():
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
+    from app import models
+    from app.llm import settings_store as store
+    from app.llm.provider import GeminiProvider, get_provider
+    eng = create_engine("sqlite://")
+    models.AppSetting.__table__.create(eng)
+    with Session(eng) as db:
+        store.save(db, "gemini", None, "AIzaSECRET1234"); db.commit()
+        assert "AIzaSECRET1234" not in db.get(models.AppSetting, "llm.api_key").value
+        assert store.get_api_key(db) == "AIzaSECRET1234"
+        p = get_provider(db)
+        assert isinstance(p, GeminiProvider) and p.model == "gemini-2.5-flash" and p.api_key == "AIzaSECRET1234"
+        store.save(db, "gemini", "gemini-2.5-pro", None); db.commit()      # ganti model, kunci lama tetap
+        assert get_provider(db).api_key == "AIzaSECRET1234" and get_provider(db).model == "gemini-2.5-pro"
+        store.clear(db); db.commit()
+        assert store.get_api_key(db) is None

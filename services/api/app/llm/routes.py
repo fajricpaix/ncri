@@ -9,6 +9,7 @@ from app import auth, models as m
 from app.config import settings
 from app.db import get_db
 from app.llm import orchestrator as orch
+from app.llm import settings_store as store
 from app.llm.provider import LLMError, get_provider
 from app.ratelimit import Limiter
 
@@ -62,7 +63,7 @@ async def _run(kind: str, body: GenerateIn, db: Session, user: m.User):
     if not db.get(m.CulturalObject, body.cultural_object_id):
         raise HTTPException(404, "objek tidak ditemukan")
     try:
-        row = await orch.generate(db, get_provider(), body.cultural_object_id, kind, user)
+        row = await orch.generate(db, get_provider(db), body.cultural_object_id, kind, user)
     except LLMError as e:
         raise HTTPException(503, str(e))
     except orch.NoAssessment:
@@ -167,7 +168,7 @@ def _answer_out(a: m.LlmAnalysis) -> AnswerOut:
 @router.post("/llm/assistant", response_model=AnswerOut, dependencies=[Depends(rate_limit)])
 async def assistant(body: AskIn, user: m.User = auth.TRIAGE, db: Session = DB):
     try:
-        row = await orch.ask(db, get_provider(), body.scope_type, body.scope_id, body.question.strip(), user)
+        row = await orch.ask(db, get_provider(db), body.scope_type, body.scope_id, body.question.strip(), user)
     except LLMError as e:
         raise HTTPException(503, str(e))
     except orch.BadScope as e:
@@ -184,3 +185,55 @@ def assistant_history(user: m.User = auth.TRIAGE, db: Session = DB):
                                      m.LlmAnalysis.created_by == user.id, m.LlmAnalysis.validation_errors == [])
          .order_by(m.LlmAnalysis.created_at.desc()).limit(20))
     return [_answer_out(a) for a in db.scalars(q)]
+
+
+class LlmSettingsIn(BaseModel):
+    provider: str = Field(pattern="^(gemini|anthropic)$")
+    model: str | None = Field(default=None, max_length=100, pattern=r"^[A-Za-z0-9._\-]*$")
+    api_key: str | None = Field(default=None, max_length=300)  # kosong = pertahankan kunci lama
+
+
+def _settings_view(db: Session) -> dict:
+    cfg = store.load(db)
+    p = cfg["provider"] or settings.llm_provider
+    return {"provider": p, "model": cfg["model"] or (store.DEFAULT_MODEL.get(p) if cfg["provider"] else settings.llm_model),
+            "source": "database" if cfg["provider"] else "env",
+            "api_key_set": bool(cfg["api_key"] or settings.llm_api_key),
+            "api_key_hint": f"…{cfg['api_key'][-4:]}" if cfg["api_key"] else None,  # kunci tidak pernah dikirim balik
+            "default_models": store.DEFAULT_MODEL}
+
+
+@router.get("/admin/llm-settings")
+def get_llm_settings(_: m.User = auth.ADMIN, db: Session = DB):
+    return _settings_view(db)
+
+
+@router.put("/admin/llm-settings")
+def put_llm_settings(body: LlmSettingsIn, admin: m.User = auth.ADMIN, db: Session = DB):
+    if not body.api_key and not store.get_api_key(db):
+        raise HTTPException(422, "API key wajib diisi")
+    store.save(db, body.provider, (body.model or "").strip() or None, (body.api_key or "").strip() or None)
+    auth.audit(db, admin, "llm.settings.update", "app_setting", None,
+               {"provider": body.provider, "model": body.model, "api_key_changed": bool(body.api_key)})  # kunci tidak dicatat
+    db.commit()
+    return _settings_view(db)
+
+
+@router.delete("/admin/llm-settings")
+def reset_llm_settings(admin: m.User = auth.ADMIN, db: Session = DB):
+    store.clear(db)
+    auth.audit(db, admin, "llm.settings.clear", "app_setting")
+    db.commit()
+    return _settings_view(db)
+
+
+@router.post("/admin/llm-settings/test", dependencies=[Depends(rate_limit)])
+async def test_llm_settings(_: m.User = auth.ADMIN, db: Session = DB):
+    """Satu panggilan kecil ke provider (tanpa data NCRI) untuk memastikan kunci & model valid."""
+    try:
+        p = get_provider(db)
+        out = await p.generate_structured("Balas JSON {\"ok\": true}.", {"ping": "test"},
+                                          {"type": "object", "properties": {"ok": {"type": "boolean"}}, "required": ["ok"]})
+    except LLMError as e:
+        raise HTTPException(502, str(e))
+    return {"ok": True, "provider": p.name, "model": p.model, "reply": out}

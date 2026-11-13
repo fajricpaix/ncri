@@ -20,9 +20,10 @@ LLM hanya **menjelaskan**, menyusun **hipotesis**, dan membuat **draft rekomenda
 |---|---|
 | kosong | LLM nonaktif, endpoint 503 |
 | `fake` | Keluaran deterministik tanpa jaringan, untuk dev/tes. Selalu berlabel "bukan AI" di UI |
+| `gemini` | Google Gemini (free tier, AI Studio): `generateContent` dengan `responseJsonSchema`, kunci di header `x-goog-api-key`. Default model `gemini-2.5-flash`. Diuji dengan transport tiruan saja |
 | `anthropic` | Anthropic Messages API, tool use dengan JSON schema. Butuh `LLM_API_KEY`; model via `LLM_MODEL` |
 
-Kunci API hanya ada di backend. **Provider `anthropic` baru diuji dengan transport tiruan, belum dengan API sungguhan.**
+Kunci API hanya ada di backend. **Admin mengisi penyedia/model/kunci di Settings > Pengaturan LLM** (`/admin/llm-settings`, tes koneksi di `/test`): disimpan di tabel `app_settings`, kunci dienkripsi Fernet dari `AUTH_SECRET` (ganti AUTH_SECRET = kunci harus diisi ulang), tidak pernah dikirim balik ke UI (hanya 4 karakter terakhir), tidak masuk audit log. Pengaturan DB menimpa env. **Provider `anthropic` baru diuji dengan transport tiruan, belum dengan API sungguhan.**
 
 ## Yang disimpan per analisis
 Provider, model, `prompt_version`, snapshot input, output, evidence refs, status review, waktu review, dan baris `audit_logs`.

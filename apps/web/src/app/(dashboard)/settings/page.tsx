@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Card } from "@/components/ui/Card";
+import { LlmSettings, type LlmSettingsData } from "@/features/settings/LlmSettings";
 import { UserAdmin } from "@/features/settings/UserAdmin";
 import { api, getMe } from "@/lib/api-server";
 import type { User } from "@/lib/permissions";
@@ -10,10 +11,11 @@ async function Content() {
   const me = await getMe();
   if (me.role !== "ADMIN")
     return <Card><p className="text-sm text-slate-600">Halaman ini hanya untuk Admin. Role Anda: {me.role}.</p></Card>;
-  const [users, logs] = await Promise.all([api<User[]>("/users"), api<AuditRow[]>("/audit-logs?limit=50")]);
+  const [users, logs, llm] = await Promise.all([api<User[]>("/users"), api<AuditRow[]>("/audit-logs?limit=50"), api<LlmSettingsData>("/admin/llm-settings")]);
   return (
     <div className="space-y-4">
       <Card title="Pengguna & Role"><UserAdmin users={users} meId={me.id} /></Card>
+      <Card title="Pengaturan LLM"><LlmSettings data={llm} /></Card>
       <Card title="Audit Log (50 terbaru)" className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="text-xs uppercase text-slate-500">

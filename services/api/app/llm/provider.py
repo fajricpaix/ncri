@@ -50,6 +50,40 @@ class AnthropicProvider:
         raise LLMError("provider tidak mengembalikan output terstruktur")
 
 
+class GeminiProvider:
+    """Google Gemini (free tier via Google AI Studio). JSON schema lewat generationConfig.responseJsonSchema."""
+    name = "gemini"
+    URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+    def __init__(self, api_key: str, model: str, timeout: float = 60.0, client: httpx.AsyncClient | None = None):
+        self.api_key, self.model, self.timeout = api_key, model, timeout
+        self._client = client
+
+    async def generate_structured(self, system_prompt, user_payload, response_schema):
+        body = {
+            "systemInstruction": {"parts": [{"text": system_prompt}]},
+            "contents": [{"role": "user", "parts": [{"text": json.dumps(user_payload, ensure_ascii=False, default=str)}]}],
+            "generationConfig": {"responseMimeType": "application/json", "responseJsonSchema": response_schema,
+                                 "temperature": 0.2, "maxOutputTokens": 8192},
+        }
+        headers = {"x-goog-api-key": self.api_key, "content-type": "application/json"}  # header, bukan URL: tidak bocor ke log
+        try:
+            if self._client:
+                r = await self._client.post(self.URL.format(model=self.model), json=body, headers=headers)
+            else:
+                async with httpx.AsyncClient(timeout=self.timeout) as c:
+                    r = await c.post(self.URL.format(model=self.model), json=body, headers=headers)
+            r.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise LLMError(f"provider error: HTTP {e.response.status_code}" + (" (kuota/rate limit gratis habis, coba lagi nanti)" if e.response.status_code == 429 else "")) from e
+        except httpx.HTTPError as e:
+            raise LLMError(f"provider error: {type(e).__name__}") from e
+        try:
+            return json.loads(r.json()["candidates"][0]["content"]["parts"][0]["text"])
+        except (KeyError, IndexError, TypeError, ValueError) as e:
+            raise LLMError("provider tidak mengembalikan JSON terstruktur") from e
+
+
 class FakeProvider:
     """Keluaran deterministik dari payload, tanpa jaringan. HANYA untuk dev/tes; bukan analisis AI."""
     name = "fake"
@@ -101,12 +135,19 @@ def _fake_assistant(self, p):
 FakeProvider._assistant = _fake_assistant
 
 
-def get_provider() -> LLMProvider:
-    p = settings.llm_provider.lower()
+def get_provider(db=None) -> LLMProvider:
+    """Pengaturan dari Admin (DB) menimpa env. Env tetap jadi fallback (mis. LLM_PROVIDER=fake untuk dev)."""
+    from app.llm import settings_store as store
+
+    cfg = store.load(db) if db is not None else {}
+    p = (cfg.get("provider") or settings.llm_provider).lower()
+    key = cfg.get("api_key") or settings.llm_api_key
+    model = cfg.get("model") or (settings.llm_model if not cfg.get("provider") else store.DEFAULT_MODEL.get(p, ""))
     if p == "fake":
         return FakeProvider()
-    if p == "anthropic":
-        if not settings.llm_api_key:
-            raise LLMError("LLM_API_KEY belum diisi")
-        return AnthropicProvider(settings.llm_api_key, settings.llm_model, settings.llm_timeout_seconds)
-    raise LLMError("LLM belum dikonfigurasi (set LLM_PROVIDER)")
+    if p in ("anthropic", "gemini"):
+        if not key:
+            raise LLMError("API key LLM belum diisi (Settings > Pengaturan LLM)")
+        cls = GeminiProvider if p == "gemini" else AnthropicProvider
+        return cls(key, model, settings.llm_timeout_seconds)
+    raise LLMError("LLM belum dikonfigurasi (Settings > Pengaturan LLM)")
