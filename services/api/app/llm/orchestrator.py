@@ -156,6 +156,8 @@ def build_assistant_context(db: Session, scope_type: str, scope_id: str | None, 
     payload = {"task": "assistant", "question": question, "scope": {"type": scope_type, "name": name},
                "objects": objects, "truncated": truncated, "observations": []}
     allowed = {o["ref"] for o in objects}
+    # ID observasi di top_factors juga ada di payload, jadi sah dikutip model (tanpa ini, cakupan nasional/provinsi ditolak)
+    allowed |= {str(i) for o in objects for f in o["top_factors"] for i in f["evidence_observation_ids"]}
     if scope_type == "object":
         ind = {i.id: i for i in db.scalars(select(m.Indicator))}
         obs = db.scalars(select(m.IndicatorObservation).where(m.IndicatorObservation.cultural_object_id == ids[0])
