@@ -5,7 +5,7 @@
 - Lint/tsc dijalankan dari apps/web
 - Struktur folder: feature-first
 - Jangan edit folder /legacy (kalau ada)
-- Jalankan `npm run lint` dan `npx tsc --noEmit` sebelum bilang task selesai
+- Jalankan `yarn lint` dan `yarn tsc --noEmit` sebelum bilang task selesai
 - Kerjakan satu task kecil per sesi, jangan loncat ke task lain
 - Setelah task besar selesai, update MEMORY.md
 - Jawaban singkat dan langsung, bahasa santai

@@ -8,7 +8,7 @@ docker compose -f infra/docker-compose.yml up -d
 cd services/api && source .venv/bin/activate
 alembic upgrade head && python -m app.demo_reset      # data awal bersih (aman diulang kapan saja)
 uvicorn app.main:app --port 8000 &                     # API
-cd ../../apps/web && npm run dev                       # web di http://localhost:3000
+cd ../../apps/web && yarn dev                       # web di http://localhost:3000
 ```
 Buka halaman login; tombol **Admin / Analyst / Reviewer / Viewer** mengisi akun demo. Siapkan dua jendela: Analyst dan Reviewer.
 Opsional AI sungguhan: isi `LLM_PROVIDER=anthropic` + `LLM_API_KEY` di `services/api/.env`. Tanpa itu, AI = contoh deterministik yang **berlabel "bukan AI"**.

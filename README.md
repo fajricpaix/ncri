@@ -10,7 +10,7 @@ cd services/api && source .venv/bin/activate && alembic upgrade head && python -
 # API (Python 3.11)
 cd services/api && uvicorn app.main:app --reload --port 8000
 # Web
-cd apps/web && cp .env.example .env.local && npm run dev
+cd apps/web && cp .env.example .env.local && yarn dev
 ```
 Demo juri: `docs/demo-script.md` (reset data: `cd services/api && python -m app.demo_reset`). Bukti kriteria MVP: `docs/acceptance-mvp.md`.
 Peta & laporan: `/risk-map`, `/reports` (ekspor CSV + cetak PDF). Sumber peta & lisensi: `data/README.md`.

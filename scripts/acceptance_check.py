@@ -114,7 +114,7 @@ print("14. Kunci API tidak pernah di browser")
 built = [p for p in glob.glob(str(ROOT / "apps/web/.next/static/**/*"), recursive=True) if p.endswith((".js", ".html", ".css"))]
 leak = [p for p in built if re.search(r"LLM_API_KEY|sk-ant-|x-api-key", Path(p).read_text(errors="ignore"))]
 envpub = (ROOT / "apps/web/.env.example").read_text() + (ROOT / "apps/web/.env.local").read_text()
-check("bundel web tidak memuat kunci/nama variabel LLM", built and not leak, f"{len(built)} file diperiksa" if built else "jalankan `npm run build` dulu")
+check("bundel web tidak memuat kunci/nama variabel LLM", built and not leak, f"{len(built)} file diperiksa" if built else "jalankan `yarn build` dulu")
 check("tidak ada NEXT_PUBLIC_*KEY/SECRET di env web", not re.search(r"NEXT_PUBLIC_\w*(KEY|SECRET|TOKEN)", envpub))
 check("respons API tidak membocorkan konfigurasi LLM", "api_key" not in viewer.get("/auth/me").text.lower())
 
