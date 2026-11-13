@@ -2,14 +2,14 @@
 
 :root {
   --background: #eef2f7;
-  --foreground: #0b1f4b;
+  --foreground: #0f223d;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-navy: #0b1f4b;
-  --color-navy-2: #12306b;
+  --color-navy: #0f223d;
+  --color-navy-2: #1a3558;
   --color-gold: #d9a93a;
   --color-gold-soft: #f6e7b8;
   --color-risk-high: #d64545;
@@ -43,10 +43,18 @@ h1, h2, h3, h4, th, label, legend, summary, button, .cap { text-transform: capit
   .app-main { scroll-behavior: smooth; }
 }
 
-/* Ilustrasi sidebar: garis digambar bertahap tiap pindah halaman (pathLength diset di SidebarArt) */
-@keyframes art-draw { to { stroke-dashoffset: 0; } }
-@keyframes art-fade { from { opacity: 0; } }
-@media (prefers-reduced-motion: no-preference) {
-  .art-draw :is(path, circle, ellipse):not([stroke-dasharray]) { stroke-dasharray: 1; stroke-dashoffset: 1; animation: art-draw 1.6s ease-out forwards; }
-  .art-draw .art-soft { animation: art-fade 1.6s ease-out; }
+/* Tombol emas bergradasi (tombol utama + menu aktif sidebar) */
+.btn-gold {
+  background: linear-gradient(180deg, #f7e5a6 0%, #ebc96f 55%, #d9ae52 100%);
+  color: var(--color-navy); font-weight: 700; border-radius: .75rem;
+  border: 1px solid rgb(255 255 255 / .5);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), 0 2px 6px rgb(120 90 20 / .28);
+  transition: filter .15s, transform .15s;
 }
+.btn-gold:hover:not(:disabled) { filter: brightness(1.05); transform: translateY(-1px); }
+
+@keyframes art-fade { from { opacity: 0; } }
+
+/* Ikon kartu statistik: muncul membal setelah gelembung Lottie */
+@keyframes stat-pop { 0% { transform: scale(.3); opacity: 0; } 55% { transform: scale(1.18); opacity: 1; } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: no-preference) { .stat-pop { animation: stat-pop .55s .08s cubic-bezier(.3, 1.4, .5, 1) backwards; } }

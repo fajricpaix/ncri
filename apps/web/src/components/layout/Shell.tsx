@@ -1,6 +1,7 @@
 "use client";
 import { Suspense, useState } from "react";
 import { Menu } from "lucide-react";
+import { PageIntro } from "./PageIntro";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
@@ -25,7 +26,7 @@ export function Shell({ footer, children }: { footer: React.ReactNode; children:
             </button>
           }
         /></div>
-        <main className="app-main flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
+        <main className="app-main flex-1 overflow-y-auto p-4 lg:p-6"><PageIntro />{children}</main>
       </div>
     </div>
   );
