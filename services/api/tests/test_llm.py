@@ -115,7 +115,7 @@ def test_gemini_provider_sends_schema_in_header_auth_and_parses_json():
         seen["h"], seen["b"], seen["url"] = req.headers, __import__("json").loads(req.content), str(req.url)
         return httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": '{"summary": "ok"}'}]}}]})
 
-    p = GeminiProvider("KUNCI", "gemini-2.5-flash", client=httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    p = GeminiProvider("KUNCI", "gemini-3.5-flash-lite", client=httpx.AsyncClient(transport=httpx.MockTransport(handler)))
     assert asyncio.run(p.generate_structured("sys", {"a": 1}, {"type": "object"})) == {"summary": "ok"}
     assert seen["h"]["x-goog-api-key"] == "KUNCI" and "KUNCI" not in seen["url"]
     assert seen["b"]["generationConfig"]["responseJsonSchema"] == {"type": "object"}
@@ -143,8 +143,8 @@ def test_api_key_is_encrypted_at_rest_and_db_setting_overrides_env():
         assert "AIzaSECRET1234" not in db.get(models.AppSetting, "llm.api_key").value
         assert store.get_api_key(db) == "AIzaSECRET1234"
         p = get_provider(db)
-        assert isinstance(p, GeminiProvider) and p.model == "gemini-2.5-flash" and p.api_key == "AIzaSECRET1234"
-        store.save(db, "gemini", "gemini-2.5-pro", None); db.commit()      # ganti model, kunci lama tetap
-        assert get_provider(db).api_key == "AIzaSECRET1234" and get_provider(db).model == "gemini-2.5-pro"
+        assert isinstance(p, GeminiProvider) and p.model == "gemini-3.5-flash-lite" and p.api_key == "AIzaSECRET1234"
+        store.save(db, "gemini", "gemini-3.8-flash", None); db.commit()      # ganti model, kunci lama tetap
+        assert get_provider(db).api_key == "AIzaSECRET1234" and get_provider(db).model == "gemini-3.8-flash"
         store.clear(db); db.commit()
         assert store.get_api_key(db) is None

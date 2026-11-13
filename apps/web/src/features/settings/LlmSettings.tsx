@@ -5,14 +5,14 @@ import { apiFetch } from "@/lib/api-client";
 
 export type LlmSettingsData = {
   provider: string; model: string; source: "database" | "env";
-  api_key_set: boolean; api_key_hint: string | null; default_models: Record<string, string>;
+  api_key_set: boolean; api_key_hint: string | null; default_models: Record<string, string>; models: Record<string, string[]>;
 };
 const input = "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-2 focus:outline-gold";
 
 export function LlmSettings({ data }: { data: LlmSettingsData }) {
   const router = useRouter();
   const [provider, setProvider] = useState(data.provider in data.default_models ? data.provider : "gemini");
-  const [model, setModel] = useState(data.source === "database" ? data.model : "");
+  const [model, setModel] = useState(data.source === "database" && data.models[provider]?.includes(data.model) ? data.model : data.default_models[provider]);
   const [apiKey, setApiKey] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -22,14 +22,14 @@ export function LlmSettings({ data }: { data: LlmSettingsData }) {
     const r = await apiFetch(path, { method, body: body && JSON.stringify(body) });
     const d = await r.json().catch(() => ({}));
     setBusy(false);
-    if (!r.ok) return setMsg({ ok: false, text: typeof d.detail === "string" ? d.detail : "Gagal: periksa isian." });
+    if (!r.ok) return setMsg({ ok: false, text: typeof d.detail === "string" ? d.detail : Array.isArray(d.detail) ? `Gagal: ${d.detail.map((x: { loc?: string[]; msg?: string }) => `${x.loc?.slice(1).join(".")} ${x.msg}`).join("; ")}` : `Gagal (HTTP ${r.status})` });
     setMsg({ ok: true, text: okText ?? `OK: ${d.provider} / ${d.model}` });
     return d;
   }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (await run("/admin/llm-settings", "PUT", { provider, model: model.trim() || null, api_key: apiKey.trim() || null }, "Tersimpan.")) {
+    if (await run("/admin/llm-settings", "PUT", { provider, model, api_key: apiKey.trim() || null }, "Tersimpan.")) {
       setApiKey(""); router.refresh();
     }
   }
@@ -43,13 +43,15 @@ export function LlmSettings({ data }: { data: LlmSettingsData }) {
       </p>
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="text-sm font-medium">Penyedia
-          <select className={input} value={provider} onChange={(e) => setProvider(e.target.value)}>
+          <select className={input} value={provider} onChange={(e) => { setProvider(e.target.value); setModel(data.default_models[e.target.value]); }}>
             <option value="gemini">Google Gemini (ada free tier)</option>
             <option value="anthropic">Anthropic (berbayar)</option>
           </select>
         </label>
-        <label className="text-sm font-medium">Model (opsional)
-          <input className={input} value={model} placeholder={data.default_models[provider]} onChange={(e) => setModel(e.target.value)} />
+        <label className="text-sm font-medium">Model
+          <select className={input} value={model} onChange={(e) => setModel(e.target.value)}>
+            {data.models[provider].map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
         </label>
         <label className="text-sm font-medium">API key
           <input type="password" autoComplete="off" className={input} value={apiKey} onChange={(e) => setApiKey(e.target.value)}

@@ -142,7 +142,11 @@ def get_provider(db=None) -> LLMProvider:
     cfg = store.load(db) if db is not None else {}
     p = (cfg.get("provider") or settings.llm_provider).lower()
     key = cfg.get("api_key") or settings.llm_api_key
-    model = cfg.get("model") or (settings.llm_model if not cfg.get("provider") else store.DEFAULT_MODEL.get(p, ""))
+    saved = cfg.get("model")
+    if cfg.get("provider"):  # model tersimpan yang sudah tak ada di daftar (mis. dihentikan Google) => default
+        model = saved if saved in store.MODELS.get(p, []) else store.DEFAULT_MODEL.get(p, "")
+    else:
+        model = settings.llm_model
     if p == "fake":
         return FakeProvider()
     if p in ("anthropic", "gemini"):

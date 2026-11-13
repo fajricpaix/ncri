@@ -189,7 +189,7 @@ def assistant_history(user: m.User = auth.TRIAGE, db: Session = DB):
 
 class LlmSettingsIn(BaseModel):
     provider: str = Field(pattern="^(gemini|anthropic)$")
-    model: str | None = Field(default=None, max_length=100, pattern=r"^[A-Za-z0-9._\-]*$")
+    model: str | None = Field(default=None, max_length=100)
     api_key: str | None = Field(default=None, max_length=300)  # kosong = pertahankan kunci lama
 
 
@@ -200,7 +200,7 @@ def _settings_view(db: Session) -> dict:
             "source": "database" if cfg["provider"] else "env",
             "api_key_set": bool(cfg["api_key"] or settings.llm_api_key),
             "api_key_hint": f"…{cfg['api_key'][-4:]}" if cfg["api_key"] else None,  # kunci tidak pernah dikirim balik
-            "default_models": store.DEFAULT_MODEL}
+            "default_models": store.DEFAULT_MODEL, "models": store.MODELS}
 
 
 @router.get("/admin/llm-settings")
@@ -210,6 +210,8 @@ def get_llm_settings(_: m.User = auth.ADMIN, db: Session = DB):
 
 @router.put("/admin/llm-settings")
 def put_llm_settings(body: LlmSettingsIn, admin: m.User = auth.ADMIN, db: Session = DB):
+    if body.model and body.model not in store.MODELS[body.provider]:
+        raise HTTPException(422, "model tidak ada di daftar untuk penyedia ini")
     if not body.api_key and not store.get_api_key(db):
         raise HTTPException(422, "API key wajib diisi")
     store.save(db, body.provider, (body.model or "").strip() or None, (body.api_key or "").strip() or None)
@@ -232,6 +234,8 @@ async def test_llm_settings(_: m.User = auth.ADMIN, db: Session = DB):
     """Satu panggilan kecil ke provider (tanpa data NCRI) untuk memastikan kunci & model valid."""
     try:
         p = get_provider(db)
+        if p.name == "fake":
+            raise LLMError("belum ada penyedia nyata: pilih Gemini, isi API key, klik Simpan dulu, baru Tes koneksi")
         out = await p.generate_structured("Balas JSON {\"ok\": true}.", {"ping": "test"},
                                           {"type": "object", "properties": {"ok": {"type": "boolean"}}, "required": ["ok"]})
     except LLMError as e:

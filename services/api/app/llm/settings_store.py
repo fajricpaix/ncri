@@ -13,7 +13,11 @@ from app import models as m
 from app.config import settings
 
 PROVIDERS = ("gemini", "anthropic")
-DEFAULT_MODEL = {"gemini": "gemini-2.5-flash", "anthropic": "claude-sonnet-5-5"}
+MODELS = {  # elemen pertama = default
+    "gemini": ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.1-flash-lite"],  # 2.5-* deprecated: 404 untuk key baru
+    "anthropic": ["claude-sonnet-5-5", "claude-haiku-5-5", "claude-opus-5-5"],
+}
+DEFAULT_MODEL = {k: v[0] for k, v in MODELS.items()}
 
 
 def _fernet() -> Fernet:
