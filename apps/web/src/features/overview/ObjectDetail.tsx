@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { MapPin, Layers, Sparkles } from "lucide-react";
+import { ChevronRight, MapPin, Layers, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
+import { Projection } from "@/features/ai-predictive-risk-engine/Projection";
+import { ObjectThumb } from "@/features/ai-predictive-risk-engine/ObjectThumb";
+import { simProb } from "@/features/ai-predictive-risk-engine/sim";
 import { Card } from "@/components/ui/Card";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { api } from "@/lib/api-server";
 import type { Analysis, CulturalObject, Risk } from "@/types/api";
 
-const BAR: Record<string, string> = { HIGH: "bg-risk-high", MEDIUM: "bg-risk-mid", LOW: "bg-risk-low" };
 
 export async function ObjectDetail({ id, province }: { id: string; province: string }) {
   const [obj, risk, analyses] = await Promise.all([
@@ -19,54 +21,73 @@ export async function ObjectDetail({ id, province }: { id: string; province: str
   const factors = [...risk.factors].sort((a, b) => b.contribution - a.contribution).slice(0, 5);
   const maxC = Math.max(...factors.map((f) => f.contribution), 1);
 
+  const level = risk.risk_level;
+  const TONE: Record<string, string> = { HIGH: "bg-red-50 ring-red-200 text-risk-high", MEDIUM: "bg-amber-50 ring-amber-200 text-amber-700", LOW: "bg-green-50 ring-green-200 text-risk-low", INSUFFICIENT_DATA: "bg-slate-100 ring-slate-200 text-slate-600" };
+  const RANK = ["bg-risk-high", "bg-orange-500", "bg-risk-mid", "bg-yellow-400", "bg-risk-low"];
+  const conf = risk.data_confidence === null ? null : Math.round(risk.data_confidence * 100);
+  const sum = factors.reduce((a, f) => a + f.contribution, 0) || 1;
+  const panel = "rounded-xl p-4 ring-1 ring-slate-200";
+
   return (
     <Card title="Detail Penilaian Risiko" className="h-full" bodyClassName="space-y-4">
-      <div>
-        <h3 className="raw text-xl font-bold text-navy">{obj.name}</h3>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
-          <RiskBadge level={risk.risk_level} />
-          <span className="raw inline-flex items-center gap-1"><MapPin size={14} aria-hidden />{province}</span>
-          <span className="raw inline-flex items-center gap-1"><Layers size={14} aria-hidden />{obj.category}</span>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-          <p className="cap text-xs text-slate-500">Skor Risiko</p>
-          <p className="text-3xl font-bold">{score === null ? "—" : score.toFixed(0)}<span className="text-base font-normal text-slate-500"> / 100</span></p>
-        </div>
-        <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200" title="Terpisah dari skor risiko">
-          <p className="cap text-xs text-slate-500">Data Confidence</p>
-          <p className="text-3xl font-bold">{risk.data_confidence?.toFixed(2).replace(".", ",") ?? "—"}</p>
-        </div>
-      </div>
-      {score !== null && (
-        <div role="img" aria-label={`Skor ${score.toFixed(0)} dari 100`}>
-          <div className="relative h-2 rounded-full bg-gradient-to-r from-risk-low via-risk-mid to-risk-high">
-            <span className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-navy shadow" style={{ left: `${Math.min(score, 100)}%` }} />
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+        <div className="flex min-w-0 flex-1 basis-80 items-center gap-4">
+          <ObjectThumb name={obj.name} size={112} />
+          <div className="min-w-0">
+            <h3 className="raw text-2xl font-bold text-navy">{obj.name}</h3>
+            <p className="raw mt-1 flex flex-wrap items-center gap-x-3 text-sm text-slate-600">
+              {obj.external_code && <span className="font-medium">{obj.external_code}</span>}
+              <span className="inline-flex items-center gap-1"><MapPin size={14} aria-hidden />{province}</span>
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="raw inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-100"><Layers size={12} aria-hidden />{obj.category}</span>
+              <RiskBadge level={level} />
+              {risk.is_simulated && <span className="rounded-md bg-gold-soft px-2 py-0.5 text-[11px] font-bold text-amber-800 ring-1 ring-gold">SIMULATED</span>}
+            </div>
           </div>
-          <div className="mt-1 flex justify-between text-xs text-slate-500"><span>Rendah</span><span>Sedang</span><span>Tinggi</span></div>
         </div>
-      )}
-      <section>
-        <h4 className="mb-2 text-sm font-bold text-navy">Komposisi Penilaian Risiko</h4>
-        {factors.length === 0 ? <p className="text-sm text-slate-600">Data belum cukup untuk menilai.</p> : (
-          <ul className="space-y-2">
-            {factors.map((f) => (
-              <li key={f.indicator_code} className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 text-sm">
-                <span className="raw truncate" title={f.indicator_name}>{f.indicator_name}</span>
-                <div className="h-2.5 rounded-full bg-slate-100"><div className={`h-2.5 rounded-full ${BAR[risk.risk_level] ?? "bg-gold"}`} style={{ width: `${(f.contribution / maxC) * 100}%` }} /></div>
-                <span className="w-10 text-right font-semibold">{f.contribution.toFixed(1)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-      <section className="rounded-xl bg-blue-50/60 p-3 ring-1 ring-blue-100">
-        <h4 className="flex items-center gap-1.5 text-sm font-bold text-navy"><Sparkles size={15} className="text-gold" aria-hidden />Insight &amp; Rekomendasi AI</h4>
-        <p className="mt-1.5 text-sm text-slate-700">{insight ? insight.output.summary : "Belum ada analisis AI untuk objek ini."}</p>
-        {insight && <p className="mt-1 text-xs text-slate-500">Status: {insight.review_status === "APPROVED" ? "disetujui reviewer" : insight.review_status === "REJECTED" ? "ditolak reviewer" : "draft, belum ditinjau"}</p>}
-        <Link href={`/cultural-objects/${id}`} className="cap mt-2 inline-block rounded-lg bg-gold px-3 py-1.5 text-sm font-semibold text-navy hover:brightness-95">Lihat Rekomendasi</Link>
-      </section>
+        <div className="grid w-full grid-cols-3 gap-3 lg:w-[30rem]">
+          <div className={`rounded-xl p-3 ring-1 ${TONE[level]}`}>
+            <p className="cap text-xs font-medium text-slate-700">Skor Risiko Saat Ini</p>
+            <p className="mt-2 text-4xl font-bold leading-none">{score === null ? "—" : score.toFixed(0)}<span className="text-sm font-normal text-slate-500"> / 100</span></p>
+          </div>
+          <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200" title="Angka contoh: model prediksi belum ada">
+            <p className="cap text-xs font-medium text-slate-700">Probabilitas Risiko Tinggi (36 Bulan)</p>
+            <p className="mt-2 flex items-center gap-1.5 text-4xl font-bold leading-none text-risk-high">{score === null ? "—" : <><TrendingUp size={22} aria-hidden />{simProb(score)}%</>}</p>
+            <span className="mt-1.5 inline-block rounded bg-gold-soft px-1.5 text-[10px] font-bold text-amber-800">SIMULATED</span>
+          </div>
+          <div className="rounded-xl bg-green-50 p-3 ring-1 ring-green-200" title="Kepercayaan terhadap kualitas data, terpisah dari skor risiko">
+            <p className="cap text-xs font-medium text-slate-700">Tingkat Keyakinan (Confidence)</p>
+            <p className="mt-2 flex items-center gap-1.5 text-4xl font-bold leading-none text-risk-low"><ShieldCheck size={22} aria-hidden />{conf === null ? "—" : `${conf}%`}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr_1fr]">
+        <section className={`${panel} min-w-0`}>
+          <h4 className="mb-1 flex items-center justify-between text-sm font-bold text-navy">Proyeksi Skor Risiko <span className="rounded bg-gold-soft px-1.5 text-[10px] font-bold text-amber-800">SIMULATED</span></h4>
+          {score === null ? <p className="text-sm text-slate-600">Data belum cukup untuk menilai.</p> : <Projection score={score} year={+risk.period_end.slice(0, 4)} />}
+        </section>
+        <section className={panel}>
+          <h4 className="mb-3 text-sm font-bold text-navy">Faktor Penggerak Risiko</h4>
+          {factors.length === 0 ? <p className="text-sm text-slate-600">Data belum cukup untuk menilai.</p> : (
+            <ul className="space-y-3">
+              {factors.map((f, i) => (
+                <li key={f.indicator_code} className="text-sm">
+                  <div className="flex justify-between gap-2"><span className="raw truncate" title={f.indicator_name}>{f.indicator_name}</span><b>{Math.round((f.contribution / sum) * 100)}%</b></div>
+                  <div className="mt-1 h-2.5 rounded-full bg-slate-100"><div className={`h-2.5 rounded-full ${RANK[i] ?? "bg-risk-low"}`} style={{ width: `${(f.contribution / maxC) * 100}%` }} /></div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+        <section className={`${panel} flex flex-col bg-blue-50/50`}>
+          <h4 className="flex items-center gap-1.5 text-sm font-bold text-navy"><Sparkles size={15} className="text-gold" aria-hidden />Insight &amp; Rekomendasi AI</h4>
+          <p className="mt-2 text-sm text-slate-700">{insight ? insight.output.summary : "Belum ada analisis AI untuk objek ini."}</p>
+          {insight && <p className="mt-1 text-xs text-slate-500">Status: {insight.review_status === "APPROVED" ? "disetujui reviewer" : insight.review_status === "REJECTED" ? "ditolak reviewer" : "draft, belum ditinjau"}</p>}
+          <Link href={`/cultural-repository/${id}`} className="cap btn-gold mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-semibold text-navy">Lihat Rekomendasi Lengkap <ChevronRight size={16} aria-hidden /></Link>
+        </section>
+      </div>
     </Card>
   );
 }

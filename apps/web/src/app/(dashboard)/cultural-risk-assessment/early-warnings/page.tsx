@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { Suspense } from "react";
 import { Card } from "@/components/ui/Card";
 import { RiskBadge } from "@/components/ui/RiskBadge";
@@ -21,7 +22,7 @@ async function List() {
           <tr key={w.id} className="border-t border-slate-100 align-top">
             <td className="py-2.5"><RiskBadge level={w.severity} /></td>
             <td>
-              <Link href={`/cultural-objects/${w.cultural_object_id}`} className="font-medium text-navy-2 hover:underline">{w.object_name}</Link>
+              <Link href={`/cultural-repository/${w.cultural_object_id}`} className="font-medium text-navy-2 hover:underline">{w.object_name}</Link>
               <span className="block font-medium">{w.title}</span>
               <span className="block text-xs text-slate-500">{w.description}</span>
             </td>
@@ -40,7 +41,7 @@ export default function EarlyWarnings() {
       <h2 className="text-xl font-bold">Early Warning</h2>
       <p className="text-sm text-slate-600">Sinyal untuk diperiksa, bukan bukti bahwa suatu budaya terancam.</p>
       <Card className="overflow-x-auto">
-        <Suspense fallback={<p className="text-sm text-slate-500">Memuat…</p>}><List /></Suspense>
+        <Suspense fallback={<PageLoader label="Memuat…" />}><List /></Suspense>
       </Card>
     </div>
   );

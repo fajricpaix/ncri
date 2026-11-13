@@ -2,16 +2,16 @@
 import { EChart } from "@/components/charts/EChart";
 import type { Overview } from "@/types/api";
 
-export function RiskChart({ distribution, total }: { distribution: Overview["distribution"]; total: number }) {
+export function RiskChart({ distribution, total, height = 240 }: { distribution: Overview["distribution"]; total: number; height?: number }) {
   return (
     <EChart
-      height={240}
+      height={height}
       option={{
         tooltip: { trigger: "item" },
-        legend: { bottom: 0 },
-        title: { text: total.toLocaleString("id-ID"), subtext: "objek", left: "center", top: "34%", textStyle: { fontSize: 24 } },
+        legend: { orient: "vertical", right: 0, top: "middle", itemWidth: 12, itemHeight: 12 },
+        title: { text: total.toLocaleString("id-ID"), subtext: "objek", left: "28%", top: "38%", textAlign: "center", textStyle: { fontSize: 24 } },
         series: [{
-          type: "pie", radius: ["55%", "78%"], label: { show: false },
+          type: "pie", radius: ["52%", "78%"], center: ["32%", "50%"], label: { show: false },
           data: [
             { name: "Tinggi", value: distribution.HIGH, itemStyle: { color: "#d64545" } },
             { name: "Sedang", value: distribution.MEDIUM, itemStyle: { color: "#e8a317" } },

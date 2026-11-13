@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { RiskMappingGis } from "@/features/risk-mapping-gis/RiskMappingGis";
 import { api } from "@/lib/api-server";
 import type { ProvinceSummary } from "@/types/api";
@@ -10,7 +11,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/risk-mappin
 
 export default function RiskMappingGisPage(props: PageProps<"/risk-mapping-gis">) {
   return (
-    <Suspense fallback={<p className="text-sm text-slate-500">Memuat peta…</p>}>
+    <Suspense fallback={<PageLoader label="Memuat peta…" />}>
       <Content searchParams={props.searchParams} />
     </Suspense>
   );

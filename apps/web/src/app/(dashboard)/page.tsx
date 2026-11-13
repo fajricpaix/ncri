@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { Suspense } from "react";
 import { Card } from "@/components/ui/Card";
 import { SimulatedBadge } from "@/components/ui/SimulatedBadge";
@@ -47,32 +48,34 @@ async function Content() {
 
       <KpiStrip d={d} />
 
-      <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-[1.7fr_1fr_1fr_1.1fr]">
-        <Card title="Peta Risiko Nasional" className="lg:col-span-2 2xl:col-span-1" action={<Link href="/risk-mapping-gis" className="text-xs underline">Buka Peta Penuh</Link>}>
-          <OverviewMap provinces={provinces} height={250} />
+      {/* Bento 6 kolom (xl): peta = 4/6 (2/3 lebar). Tiap baris jumlah span = 6 (4+2, 3+3, 2+2+2, 3+3). */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+        <Card title="Peta Risiko Nasional" className="h-full md:col-span-2 xl:col-span-4" action={<Link href="/risk-map" className="text-xs underline">Buka Peta Penuh</Link>}>
+          <OverviewMap provinces={provinces} height={400} />
         </Card>
-        <Composition d={d} />
-        <Card title="Tren Tingkat Risiko per Periode" className="h-full" bodyClassName="flex items-center">
+        <div className="grid gap-4 md:col-span-2 md:grid-cols-2 xl:col-span-2 xl:grid-cols-1 xl:grid-rows-[auto_1fr]">
+          <Composition d={d} />
+          <EarlyWarning d={d} />
+        </div>
+
+        <Card title="Tren Tingkat Risiko per Periode" className="h-full md:col-span-2 xl:col-span-3" bodyClassName="flex items-center">
           {d.trend.length >= 2 ? <div className="w-full"><TrendChart trend={d.trend} /></div> : <p className="text-sm text-slate-600">Tren butuh minimal dua periode penilaian.</p>}
         </Card>
-        <div className="lg:col-span-2 2xl:col-span-1"><EarlyWarning d={d} /></div>
-      </div>
+        <div className="md:col-span-2 xl:col-span-3"><TopProvinces provinces={provinces} /></div>
 
-      <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
-        <CategorySpread provinces={provinces} />
-        <TopProvinces provinces={provinces} />
-        <ProgramStatus />
-        <ProgramImpact />
-      </div>
+        <div className="xl:col-span-2"><CategorySpread provinces={provinces} /></div>
+        <div className="xl:col-span-2"><ProgramStatus /></div>
+        <div className="md:col-span-2 xl:col-span-2"><ProgramImpact /></div>
 
-      <InsightBand top={top} insight={insight} recs={recs} />
+        <InsightBand top={top} insight={insight} recs={recs} />
+      </div>
     </div>
   );
 }
 
 export default function Overview() {
   return (
-    <Suspense fallback={<p className="text-sm text-slate-500">Memuat ringkasan…</p>}>
+    <Suspense fallback={<PageLoader label="Memuat ringkasan…" />}>
       <Content />
     </Suspense>
   );

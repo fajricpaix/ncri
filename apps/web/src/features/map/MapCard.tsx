@@ -4,7 +4,7 @@ import type { MapLevel, ProvinceSummary } from "@/types/api";
 import { Legend, RiskMap } from "./RiskMap";
 
 // Klik provinsi = set filter ?prov=, tabel + panel detail ikut berubah.
-export function MapCard({ provinces, selected, level }: { provinces: ProvinceSummary[]; selected: string | null; level: MapLevel | "ALL" }) {
+export function MapCard({ provinces, selected, level, height = 380 }: { provinces: ProvinceSummary[]; selected: string | null; level: MapLevel | "ALL"; height?: number }) {
   const router = useRouter();
   const path = usePathname();
   const sp = useSearchParams();
@@ -16,7 +16,7 @@ export function MapCard({ provinces, selected, level }: { provinces: ProvinceSum
   };
   return (
     <div className="space-y-3">
-      <RiskMap provinces={provinces} selected={selected} levelFilter={level} onSelect={pick} height={380} />
+      <RiskMap provinces={provinces} selected={selected} levelFilter={level} onSelect={pick} height={height} />
       <Legend />
       <p className="text-xs text-slate-500">Warna = skor rata-rata objek yang dinilai di provinsi itu (bisa menyembunyikan satu objek berisiko tinggi). Batas provinsi 2017: pemekaran Papua digambar sebagai induknya. Klik provinsi lagi untuk melepas filter.</p>
     </div>

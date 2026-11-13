@@ -24,7 +24,7 @@ export function FilterBar({ action, categories, provinces, levels, values }: { a
       ))}
       <div className="flex items-end gap-2">
         <Link href={action} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-navy hover:bg-slate-50"><RotateCcw size={14} aria-hidden />Reset</Link>
-        <button type="submit" className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-navy hover:brightness-95"><Filter size={14} aria-hidden />Terapkan</button>
+        <button type="submit" className="inline-flex items-center gap-1.5 btn-gold px-4 py-2 text-sm font-semibold text-navy"><Filter size={14} aria-hidden />Terapkan</button>
       </div>
     </form>
   );

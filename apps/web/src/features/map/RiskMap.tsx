@@ -6,7 +6,7 @@ import type { MapLevel, ProvinceSummary } from "@/types/api";
 import { LEVEL_LABEL } from "./levels";
 
 // Palet khusus peta (latar navy gelap): lebih jenuh agar kontras. Badge/chart lain tetap pakai LEVEL_COLOR.
-const MAP_BG = "#0c1f45";
+const MAP_BG = "#0f223d";
 // Gradasi per skor rata-rata provinsi; titik 40 dan 70 = ambang level (risk.py), jadi warna tetap konsisten dengan label.
 const RAMP: [number, string][] = [[0, "#3fb14a"], [39, "#8fd23f"], [40, "#f5c230"], [55, "#f58a2a"], [70, "#ef2b21"], [100, "#c71f18"]];
 const hex = (c: string) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
@@ -43,6 +43,7 @@ export function RiskMap({ provinces, selected = null, levelFilter = "ALL", onSel
   const sync = useRef<() => void>(() => {});
   const select = useRef(onSelect);
   const [failed, setFailed] = useState(false);
+  const [tip, setTip] = useState<{ x: number; y: number; w: number; p: ProvinceSummary } | null>(null);
 
   useEffect(() => { select.current = onSelect; }, [onSelect]);
 
@@ -69,7 +70,6 @@ export function RiskMap({ provinces, selected = null, levelFilter = "ALL", onSel
     map.on("resize", lockMinZoom);
     map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: "Batas provinsi 2017 © OpenStreetMap contributors (ODbL) via geoBoundaries" }));
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
-    const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
     const byCode = new Map(provinces.map((p) => [p.code, p]));
 
     map.on("load", async () => {
@@ -86,18 +86,41 @@ export function RiskMap({ provinces, selected = null, levelFilter = "ALL", onSel
         "fill-opacity": 1,
       } });
       map.addLayer({ id: "line", type: "line", source: "prov", paint: { "line-color": "#ffffff", "line-opacity": 0.45, "line-width": 0.5 } });
+      // efek "terangkat": salinan provinsi yang di-hover digeser ke atas, dengan bayangan di bawahnya
+      const none = ["==", ["get", "code"], ""] as maplibregl.FilterSpecification;
+      map.addLayer({ id: "lift-shadow", type: "fill", source: "prov", filter: none, paint: { "fill-color": "#000", "fill-opacity": 0.35, "fill-translate": [0, 0], "fill-translate-transition": { duration: 160, delay: 0 } } });
+      map.addLayer({ id: "lift", type: "fill", source: "prov", filter: none, paint: { "fill-color": ["get", "color"], "fill-translate": [0, 0], "fill-translate-transition": { duration: 160, delay: 0 } } });
+      map.addLayer({ id: "lift-line", type: "line", source: "prov", filter: none, paint: { "line-color": "#ffffff", "line-width": 1.2, "line-translate": [0, 0], "line-translate-transition": { duration: 160, delay: 0 } } });
       map.addLayer({ id: "sel", type: "line", source: "prov", filter: ["==", ["get", "code"], ""], paint: { "line-color": "#ffffff", "line-width": 2.5 } });
       ready.current = true;
       sync.current();
     });
 
+    let hovered = "";
+    const lift = (code: string) => {
+      if (code === hovered) return;
+      hovered = code;
+      const f: maplibregl.FilterSpecification = ["==", ["get", "code"], code];
+      for (const id of ["lift-shadow", "lift", "lift-line"]) map.setFilter(id, f);
+      // set ke posisi diam dulu, lalu geser di frame berikut supaya transisi jalan
+      const up = code ? -4 : 0, sh = code ? 1 : 0;
+      map.setPaintProperty("lift-shadow", "fill-translate", [0, 0]);
+      map.setPaintProperty("lift", "fill-translate", [0, 0]);
+      map.setPaintProperty("lift-line", "line-translate", [0, 0]);
+      requestAnimationFrame(() => {
+        if (hovered !== code) return;
+        map.setPaintProperty("lift-shadow", "fill-translate", [0, sh]);
+        map.setPaintProperty("lift", "fill-translate", [0, up]);
+        map.setPaintProperty("lift-line", "line-translate", [0, up]);
+      });
+    };
     map.on("mousemove", "fill", (e) => {
       const code = e.features?.[0]?.properties?.code as string | undefined;
       const p = code ? byCode.get(code) : undefined;
       map.getCanvas().style.cursor = "pointer";
-      if (p) popup.setLngLat(e.lngLat).setHTML(`<b>${p.name}</b><br>${LEVEL_LABEL[p.level]}${p.avg_score !== null ? ` · skor ${p.avg_score}` : ""} · ${p.n_objects} objek`).addTo(map);
+      if (p) { lift(p.code); setTip({ x: e.point.x, y: e.point.y, w: box.current?.clientWidth ?? 0, p }); }
     });
-    map.on("mouseleave", "fill", () => { map.getCanvas().style.cursor = ""; popup.remove(); });
+    map.on("mouseleave", "fill", () => { map.getCanvas().style.cursor = ""; lift(""); setTip(null); });
     map.on("click", "fill", (e) => {
       const code = e.features?.[0]?.properties?.code as string | undefined;
       if (code) select.current?.(code);
@@ -124,7 +147,25 @@ export function RiskMap({ provinces, selected = null, levelFilter = "ALL", onSel
 
   if (failed)
     return <p className="rounded-xl bg-slate-100 p-4 text-sm text-slate-600" style={{ minHeight: height }}>Peta tidak dapat dimuat di perangkat ini (WebGL tidak tersedia). Gunakan tabel provinsi.</p>;
-  return <div ref={box} role="img" aria-label="Peta risiko provinsi Indonesia. Data lengkap tersedia pada tabel provinsi." className="w-full overflow-hidden rounded-xl" style={{ height }} />;
+  const d = tip?.p.distribution;
+  const rows: [string, number][] = tip ? [["Objek Budaya", tip.p.n_objects], ["Risiko Tinggi", d?.HIGH ?? 0], ["Risiko Sedang", d?.MEDIUM ?? 0], ["Risiko Rendah", d?.LOW ?? 0]] : [];
+  return (
+    <div className="relative">
+      <div ref={box} role="img" aria-label="Peta risiko provinsi Indonesia. Data lengkap tersedia pada tabel provinsi." className="w-full overflow-hidden rounded-xl" style={{ height }} />
+      {tip && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute z-10 w-max rounded-lg bg-white px-3 py-2 text-xs leading-snug text-navy shadow-lg ring-1 ring-black/5"
+          style={{ left: tip.x, top: tip.y, transform: `translate(${tip.x > tip.w / 2 ? "calc(-100% - 14px)" : "14px"}, ${tip.y > height / 2 ? "calc(-100% - 8px)" : "8px"})` }}
+        >
+          <b className="raw mb-1 block text-[13px]">{tip.p.name}</b>
+          <dl className="grid grid-cols-[auto_auto] gap-x-1.5">
+            {rows.map(([k, v]) => (<div key={k} className="contents"><dt className="font-medium">{k}</dt><dd className="font-semibold">: {v}</dd></div>))}
+          </dl>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function Legend() {

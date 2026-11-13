@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowUp, BadgeCheck, CheckCircle2, Layers, MapPin, Sparkles, Target, TriangleAlert, type LucideIcon } from "lucide-react";
+import { StatCard, toneOf } from "@/components/ui/StatCard";
+import { ArrowRight, BadgeCheck, Bell, CheckCircle2, Layers, MapPin, Sparkles, Target, TriangleAlert, type LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { SimulatedBadge } from "@/components/ui/SimulatedBadge";
@@ -11,12 +12,12 @@ const COLOR: Record<RiskLevelName, string> = { HIGH: "#d64545", MEDIUM: "#e8a317
 const PILL: Record<RiskLevelName, string> = { HIGH: "bg-risk-high", MEDIUM: "bg-risk-mid", LOW: "bg-risk-low", INSUFFICIENT_DATA: "bg-risk-none" };
 
 // Donut CSS murni (tanpa library chart): segmen = conic-gradient, angka di tengah.
-export function Donut({ segs, center, sub }: { segs: { value: number; color: string }[]; center: string; sub: string }) {
+export function Donut({ segs, center, sub, size = "size-28" }: { segs: { value: number; color: string }[]; center: string; sub: string; size?: string }) {
   const total = segs.reduce((a, s) => a + s.value, 0);
   let acc = 0;
   const stops = total === 0 ? "#e2e8f0 0 100%" : segs.map((s) => `${s.color} ${(acc / total) * 100}% ${((acc += s.value) / total) * 100}%`).join(",");
   return (
-    <div className="relative size-32 shrink-0 rounded-full" style={{ background: `conic-gradient(${stops})` }} role="img" aria-label={`${center} ${sub}`}>
+    <div className={`relative ${size} shrink-0 rounded-full`} style={{ background: `conic-gradient(${stops})` }} role="img" aria-label={`${center} ${sub}`}>
       <div className="absolute inset-[17%] grid place-content-center rounded-full bg-white text-center">
         <b className="text-xl leading-none">{center}</b>
         <span className="text-[11px] text-slate-500">{sub}</span>
@@ -43,15 +44,9 @@ export function KpiStrip({ d }: { d: Overview }) {
   ];
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-      {items.map(({ label, value, icon: Icon, tone, sim, foot }) => (
-        <div key={label} className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-          <span className={`grid size-12 shrink-0 place-content-center rounded-2xl ${tone}`}><Icon size={22} aria-hidden /></span>
-          <div className="min-w-0">
-            <p className="cap truncate text-xs text-slate-500">{label}</p>
-            <p className="text-2xl font-bold leading-tight">{value}{label === "Indeks Keberlangsungan" && <span className="text-xs font-normal text-slate-500"> /100</span>}</p>
-            <div className="flex items-center gap-1.5">{foot}{sim && <span className="rounded bg-gold-soft px-1 text-[9px] font-bold text-amber-800" title="Data contoh">SIM</span>}</div>
-          </div>
-        </div>
+      {items.map(({ label, value, icon, tone, sim, foot }) => (
+        <StatCard key={label} icon={icon} tone={toneOf(tone)} label={label} sim={sim} foot={foot}
+          value={<>{value}{label === "Indeks Keberlangsungan" && <span className="text-sm font-normal text-slate-500"> /100</span>}</>} />
       ))}
     </div>
   );
@@ -60,9 +55,9 @@ export function KpiStrip({ d }: { d: Overview }) {
 export function Composition({ d }: { d: Overview }) {
   const rows = (["HIGH", "MEDIUM", "LOW", "INSUFFICIENT_DATA"] as const).map((k) => ({ k, label: { HIGH: "Risiko Tinggi", MEDIUM: "Risiko Sedang", LOW: "Risiko Rendah", INSUFFICIENT_DATA: "Data Kurang" }[k], v: d.distribution[k] }));
   return (
-    <Card title="Komposisi Tingkat Risiko" className="h-full" bodyClassName="flex flex-col items-center justify-center gap-4">
+    <Card title="Komposisi Tingkat Risiko" className="h-full" bodyClassName="flex items-center gap-4 !p-3">
       <Donut segs={rows.map((r) => ({ value: r.v, color: COLOR[r.k] }))} center={id(d.total_objects)} sub="Objek" />
-      <ul className="w-full space-y-1.5 text-sm">
+      <ul className="min-w-0 flex-1 space-y-1 text-[13px]">
         {rows.map((r) => (
           <li key={r.k} className="flex items-center gap-2">
             <span className="size-2.5 rounded-sm" style={{ background: COLOR[r.k] }} aria-hidden />
@@ -76,21 +71,33 @@ export function Composition({ d }: { d: Overview }) {
   );
 }
 
+const WARN: [keyof Overview["open_warnings"], string, string, string][] = [
+  ["HIGH", "Peringatan tingkat tinggi", "#d64545", "bg-red-50 text-risk-high"],
+  ["MEDIUM", "Perubahan tajam perlu diperiksa", "#e8a317", "bg-amber-50 text-amber-700"],
+  ["LOW", "Perlu verifikasi data", "#3b82f6", "bg-blue-50 text-blue-600"],
+];
+
+// Total besar + bar proporsi bertumpuk, lalu rincian per tingkat (angka, porsi) dan satu tombol aksi.
 export function EarlyWarning({ d }: { d: Overview }) {
-  const rows: [keyof Overview["open_warnings"], string, string, LucideIcon][] = [
-    ["HIGH", "Peringatan tingkat tinggi", "bg-red-50 text-risk-high", ArrowUp],
-    ["MEDIUM", "Perubahan tajam perlu diperiksa", "bg-amber-50 text-risk-mid", TriangleAlert],
-    ["LOW", "Perlu verifikasi data", "bg-blue-50 text-blue-600", MapPin],
-  ];
+  const total = WARN.reduce((a, [k]) => a + d.open_warnings[k], 0);
   return (
-    <Card title="Early Warning Terbuka" className="h-full" bodyClassName="flex flex-col justify-center gap-2.5" action={<Link href="/cultural-risk-assessment/early-warnings" className="text-xs underline">Lihat Semua</Link>}>
-      {rows.map(([k, text, tone, Icon]) => (
-        <div key={k} className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
-          <span className={`grid size-10 place-content-center rounded-lg ${tone}`}><Icon size={18} aria-hidden /></span>
-          <b className="w-8 text-2xl">{d.open_warnings[k]}</b>
-          <span className="text-sm leading-snug">{text}</span>
+    <Card title="Early Warning Terbuka" icon={Bell} className="h-full" bodyClassName="flex flex-col gap-4">
+      <div>
+        <p className="flex items-baseline gap-2"><b className="text-4xl leading-none">{total}</b><span className="text-sm text-slate-500">peringatan terbuka</span></p>
+        <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-slate-100" role="img" aria-label={WARN.map(([k, l]) => `${l}: ${d.open_warnings[k]}`).join(", ")}>
+          {WARN.map(([k, , color]) => <span key={k} style={{ width: `${total ? (d.open_warnings[k] / total) * 100 : 0}%`, background: color }} />)}
         </div>
-      ))}
+      </div>
+      <ul className="divide-y divide-slate-100">
+        {WARN.map(([k, text, color, tone]) => (
+          <li key={k} className="flex items-center gap-3 py-2.5">
+            <span className={`grid h-8 min-w-11 place-content-center rounded-lg px-2 text-base font-bold ${tone}`}>{d.open_warnings[k]}</span>
+            <span className="flex-1 text-sm leading-snug">{text}</span>
+            <span className="flex items-center gap-1.5 text-xs text-slate-500"><span className="size-2 rounded-full" style={{ background: color }} aria-hidden />{total ? id((d.open_warnings[k] / total) * 100, 0) : 0}%</span>
+          </li>
+        ))}
+      </ul>
+      <Link href="/early-warnings" className="cap mt-auto inline-flex items-center justify-center gap-1.5 rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-navy hover:brightness-95">Tinjau Semua Peringatan <ArrowRight size={14} aria-hidden /></Link>
     </Card>
   );
 }
@@ -101,14 +108,13 @@ export function CategorySpread({ provinces }: { provinces: ProvinceSummary[] }) 
   const rows = [...counts].sort((a, b) => b[1] - a[1]);
   const total = rows.reduce((a, r) => a + r[1], 0);
   return (
-    <Card title="Sebaran Objek per Jenis Budaya" className="h-full" bodyClassName="flex flex-col justify-center">
+    <Card title="Sebaran Objek per Jenis Budaya" className="h-full" bodyClassName="flex flex-col">
       {rows.length === 0 ? <p className="text-sm text-slate-600">Belum ada objek.</p> : (
-        <ul className="space-y-2.5">
+        <ul className="flex flex-1 flex-col justify-between gap-3">
           {rows.map(([name, n]) => (
-            <li key={name} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_auto] items-center gap-2 text-sm">
-              <span className="raw truncate" title={name}>{name}</span>
-              <div className="h-2.5 rounded-full bg-slate-100"><div className="h-2.5 rounded-full bg-navy-2" style={{ width: `${(n / rows[0][1]) * 100}%` }} /></div>
-              <span className="text-xs"><b>{n}</b> <span className="text-slate-500">({id((n / total) * 100, 0)}%)</span></span>
+            <li key={name} className="text-sm">
+              <div className="flex items-baseline justify-between gap-2"><span className="raw truncate font-medium" title={name}>{name}</span><span className="shrink-0 text-xs"><b>{n}</b> <span className="text-slate-500">({id((n / total) * 100, 0)}%)</span></span></div>
+              <div className="mt-1 h-2 rounded-full bg-slate-100"><div className="h-2 rounded-full bg-navy-2" style={{ width: `${(n / rows[0][1]) * 100}%` }} /></div>
             </li>
           ))}
         </ul>
@@ -144,11 +150,17 @@ export function ProgramStatus() {
   const s = SIM.programStatus;
   const total = s.reduce((a, r) => a + r.value, 0);
   return (
-    <Card title="Status Program Pelestarian" className="h-full" action={<SimulatedBadge />} bodyClassName="flex flex-wrap items-center justify-center gap-4">
-      <Donut segs={s} center={String(total)} sub="Program" />
-      <ul className="space-y-1.5 text-sm">
+    <Card title="Status Program Pelestarian" className="h-full" action={<SimulatedBadge />} bodyClassName="flex flex-col items-center justify-between gap-4">
+      <Donut segs={s} center={String(total)} sub="Program" size="size-40" />
+      <ul className="grid w-full grid-cols-2 gap-2">
         {s.map((r) => (
-          <li key={r.label} className="flex items-center gap-2"><span className="size-2.5 rounded-sm" style={{ background: r.color }} aria-hidden />{r.label}<b className="ml-auto pl-3">{r.value}</b><span className="text-xs text-slate-500">({id((r.value / total) * 100, 0)}%)</span></li>
+          <li key={r.label} className="flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+            <span className="h-8 w-1.5 shrink-0 rounded-full" style={{ background: r.color }} aria-hidden />
+            <div className="min-w-0 leading-tight">
+              <p className="text-xl font-bold">{r.value} <span className="text-xs font-normal text-slate-500">({id((r.value / total) * 100, 0)}%)</span></p>
+              <p className="truncate text-xs text-slate-500">{r.label}</p>
+            </div>
+          </li>
         ))}
       </ul>
     </Card>
@@ -157,17 +169,23 @@ export function ProgramStatus() {
 
 export function ProgramImpact() {
   return (
-    <Card title="Dampak Program (Sebelum vs Sesudah)" className="h-full" action={<SimulatedBadge />} bodyClassName="flex flex-col justify-center gap-4">
-      {SIM.impact.map((r) => (
-        <div key={r.label} className="text-sm">
-          <div className="flex items-center justify-between"><span className="font-medium">{r.label}</span><Delta v={((r.after - r.before) / r.before) * 100} /></div>
-          {([["Sebelum", r.before, "bg-slate-300"], ["Sesudah", r.after, "bg-navy-2"]] as const).map(([l, v, c]) => (
-            <div key={l} className="mt-1 grid grid-cols-[3.5rem_1fr_3rem] items-center gap-2 text-xs text-slate-500">
-              {l}<div className="h-2 rounded-full bg-slate-100"><div className={`h-2 rounded-full ${c}`} style={{ width: `${(v / Math.max(r.before, r.after)) * 100}%` }} /></div><b className="text-right text-navy">{id(v)}</b>
+    <Card title="Dampak Program (Sebelum vs Sesudah)" className="h-full" action={<SimulatedBadge />} bodyClassName="flex flex-col gap-3">
+      {SIM.impact.map((r) => {
+        const max = Math.max(r.before, r.after);
+        return (
+          <div key={r.label} className="flex flex-1 flex-col justify-between rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-medium">{r.label}</span>
+              <span className="rounded-full bg-green-50 px-2 py-0.5 ring-1 ring-green-200"><Delta v={((r.after - r.before) / r.before) * 100} /></span>
             </div>
-          ))}
-        </div>
-      ))}
+            <p className="flex items-baseline gap-2"><span className="text-sm text-slate-400 line-through decoration-slate-300">{id(r.before)}</span><span aria-hidden className="text-slate-400">→</span><b className="text-2xl">{id(r.after)}</b></p>
+            <div className="space-y-1" aria-hidden>
+              <div className="h-1.5 rounded-full bg-slate-200"><div className="h-1.5 rounded-full bg-slate-400" style={{ width: `${(r.before / max) * 100}%` }} /></div>
+              <div className="h-1.5 rounded-full bg-slate-200"><div className="h-1.5 rounded-full bg-navy-2" style={{ width: `${(r.after / max) * 100}%` }} /></div>
+            </div>
+          </div>
+        );
+      })}
     </Card>
   );
 }
@@ -177,25 +195,25 @@ const REVIEW = { APPROVED: "Disetujui reviewer", REJECTED: "Ditolak reviewer", D
 // Insight = ringkasan analisis AI tersimpan untuk objek prioritas #1; rekomendasi = daftar /recommendations. Keduanya data nyata.
 export function InsightBand({ top, insight, recs }: { top: Overview["priority"][number] | undefined; insight: Analysis | null; recs: Recommendation[] }) {
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <Card title="Insight & Rekomendasi AI" icon={Sparkles}>
+    <>
+      <Card title="Insight & Rekomendasi AI" icon={Sparkles} className="h-full md:col-span-2 xl:col-span-3">
         {!insight || !top ? <p className="text-sm text-slate-600">Belum ada analisis AI. Buat dari halaman detail objek.</p> : (
           <div className="space-y-2 text-sm">
-            <p className="text-xs text-slate-500">Objek prioritas: <Link href={`/cultural-objects/${top.id}`} className="raw font-semibold text-navy-2 hover:underline">{top.name}</Link> <RiskBadge level={top.level} /></p>
+            <p className="text-xs text-slate-500">Objek prioritas: <Link href={`/cultural-repository/${top.id}`} className="raw font-semibold text-navy-2 hover:underline">{top.name}</Link> <RiskBadge level={top.level} /></p>
             <p className="text-slate-700">{insight.output.summary}</p>
             <p className="text-xs text-slate-500">{REVIEW[insight.review_status]} · penjelasan AI bukan fakta final, butuh validasi ahli</p>
           </div>
         )}
       </Card>
-      <Card title="Rekomendasi Strategis" icon={Target} action={<Link href="/recommendations" className="text-xs underline">Lihat Semua</Link>}>
+      <Card title="Rekomendasi Strategis" icon={Target} className="h-full md:col-span-2 xl:col-span-3" action={<Link href="/recommendations" className="text-xs underline">Lihat Semua</Link>}>
         {recs.length === 0 ? <p className="text-sm text-slate-600">Belum ada rekomendasi. Buat dari panel AI di detail objek.</p> : (
           <ul className="space-y-2 text-sm">
             {recs.slice(0, 3).map((r) => (
-              <li key={r.id} className="flex items-start gap-2"><CheckCircle2 size={16} className="mt-0.5 shrink-0 text-risk-low" aria-hidden /><span className="raw">{r.title} <span className="text-xs text-slate-500">· {r.object_name}</span></span></li>
+              <li key={r.id} className="flex items-start gap-2"><CheckCircle2 size={16} className="mt-0.5 shrink-0 text-risk-low" aria-hidden /><span className="raw">{r.title}{!r.title.includes(r.object_name) && <span className="text-xs text-slate-500"> · {r.object_name}</span>}</span></li>
             ))}
           </ul>
         )}
       </Card>
-    </div>
+    </>
   );
 }

@@ -28,7 +28,7 @@ export function RunRiskButton({ objectId }: { objectId?: string }) {
   return (
     <span className="inline-flex items-center gap-2">
       <button onClick={run} disabled={state === "busy"}
-        className="inline-flex items-center gap-2 rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-navy disabled:opacity-60">
+        className="inline-flex items-center gap-2 btn-gold px-3 py-2 text-sm font-semibold text-navy disabled:opacity-60">
         <RefreshCw size={16} className={state === "busy" ? "animate-spin" : ""} aria-hidden />
         {state === "busy" ? "Menghitung…" : "Hitung ulang risiko"}
       </button>
