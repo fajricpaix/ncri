@@ -16,7 +16,7 @@ export function RiskChart({ distribution, total }: { distribution: Overview["dis
             { name: "Tinggi", value: distribution.HIGH, itemStyle: { color: "#d64545" } },
             { name: "Sedang", value: distribution.MEDIUM, itemStyle: { color: "#e8a317" } },
             { name: "Rendah", value: distribution.LOW, itemStyle: { color: "#2e9e5b" } },
-            { name: "Data kurang", value: distribution.INSUFFICIENT_DATA, itemStyle: { color: "#8a94a6" } },
+            { name: "Data Kurang", value: distribution.INSUFFICIENT_DATA, itemStyle: { color: "#8a94a6" } },
           ],
         }],
       }}

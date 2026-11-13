@@ -1,130 +1,71 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { AlertTriangle, AlertCircle, Gauge, Landmark, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { RiskBadge } from "@/components/ui/RiskBadge";
 import { SimulatedBadge } from "@/components/ui/SimulatedBadge";
 import { OverviewMap } from "@/features/map/OverviewMap";
-import { RiskChart } from "@/features/overview/RiskChart";
+import { CategorySpread, Composition, EarlyWarning, InsightBand, KpiStrip, ProgramImpact, ProgramStatus, TopProvinces } from "@/features/overview/panels";
 import { RunRiskButton } from "@/features/overview/RunRiskButton";
 import { TrendChart } from "@/features/overview/TrendChart";
 import { api } from "@/lib/api-server";
-import type { Overview as OverviewData, ProvinceSummary } from "@/types/api";
+import type { Analysis, Overview as OverviewData, ProvinceSummary, Recommendation } from "@/types/api";
 
 const pct = (v: number | null) => (v === null ? "—" : `${Math.round(v * 100)}%`);
+const soft = <T,>(p: Promise<T>, fallback: T) => p.catch(() => fallback); // insight/rekomendasi opsional: jangan jatuhkan halaman
 
 async function Content() {
-  const [d, provinces] = await Promise.all([api<OverviewData>("/dashboard/overview"), api<ProvinceSummary[]>("/map/provinces")]);
-  const [prev, last] = d.trend.length >= 2 ? [d.trend[d.trend.length - 2], d.trend[d.trend.length - 1]] : [null, null];
-  const delta = (k: "HIGH" | "MEDIUM" | "LOW") => (prev && last ? { n: last[k] - prev[k], vs: prev.period_end.slice(0, 4), worse: k === "HIGH" } : null);
-  const kpis = [
-    { label: "Total Objek Budaya", value: d.total_objects.toLocaleString("id-ID"), icon: Landmark, cls: "text-navy-2 bg-blue-50" },
-    { label: "Risiko Tinggi", value: d.distribution.HIGH, icon: AlertTriangle, cls: "text-risk-high bg-red-50", delta: delta("HIGH") },
-    { label: "Risiko Sedang", value: d.distribution.MEDIUM, icon: AlertCircle, cls: "text-risk-mid bg-amber-50", delta: delta("MEDIUM") },
-    { label: "Risiko Rendah", value: d.distribution.LOW, icon: ShieldCheck, cls: "text-risk-low bg-green-50", delta: delta("LOW") },
-    { label: "Data Confidence Rata-rata", value: d.avg_confidence?.toFixed(2).replace(".", ",") ?? "—", icon: Gauge, cls: "text-purple-700 bg-purple-50" },
-  ];
+  const [d, provinces, recs] = await Promise.all([
+    api<OverviewData>("/dashboard/overview"),
+    api<ProvinceSummary[]>("/map/provinces"),
+    soft(api<Recommendation[]>("/recommendations"), []),
+  ]);
+  const top = d.priority[0];
+  const analyses = top ? await soft(api<Analysis[]>(`/cultural-objects/${top.id}/analyses`), []) : [];
+  const insight = analyses.find((a) => a.analysis_type === "RISK_EXPLANATION") ?? analyses[0] ?? null;
   const quality = [
-    ["Kelengkapan indikator", d.quality.completeness],
-    ["Kemutakhiran data", d.quality.freshness],
+    ["Kelengkapan", d.quality.completeness],
+    ["Kemutakhiran", d.quality.freshness],
     ["Terverifikasi", d.quality.verification],
   ] as const;
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {d.is_simulated && <SimulatedBadge />}
-        <span className="text-sm text-slate-500">
-          {d.assessed_objects} dari {d.total_objects} objek memiliki data cukup untuk dinilai
-        </span>
-        <span className="w-full text-xs text-slate-500">
-          Sumber: {d.sources.join(", ") || "—"} · penilaian s.d. {d.latest_period_end ?? "—"} · metode {d.method_version}
-        </span>
+        <span className="text-sm text-slate-600">{d.assessed_objects} dari {d.total_objects} objek memiliki data cukup untuk dinilai</span>
         <span className="ml-auto"><RunRiskButton /></span>
+        <p className="w-full text-xs text-slate-500">
+          Sumber: {d.sources.join(", ") || "—"} · penilaian s.d. {d.latest_period_end ?? "—"} · metode {d.method_version} ·{" "}
+          {quality.map(([l, v]) => `${l} ${pct(v)}`).join(" · ")} · Data confidence {d.avg_confidence?.toFixed(2).replace(".", ",") ?? "—"}
+        </p>
       </div>
 
       {d.assessed_objects === 0 && (
         <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-200">
-          Belum ada penilaian risiko. Import observasi di <Link className="underline" href="/data-sources">Data Sources</Link>, lalu klik “Hitung ulang risiko”.
+          Belum ada penilaian risiko. Import observasi di <Link className="underline" href="/data-sources">Data Submission</Link>, lalu klik “Hitung ulang risiko”.
         </p>
       )}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        {kpis.map(({ label, value, icon: Icon, cls, delta: dl }) => (
-          <div key={label} className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-            <span className={`rounded-full p-2.5 ${cls}`}><Icon size={22} aria-hidden /></span>
-            <div>
-              <p className="cap text-xs text-slate-500">{label}</p>
-              <p className="text-2xl font-bold">{value}</p>
-              {dl && (
-                <p className={`text-xs font-semibold ${dl.n === 0 ? "text-slate-500" : dl.n > 0 === dl.worse ? "text-risk-high" : "text-risk-low"}`}>
-                  {dl.n === 0 ? "● tetap" : dl.n > 0 ? `▲ +${dl.n}` : `▼ ${dl.n}`} <span className="font-normal text-slate-500">vs {dl.vs}</span>
-                </p>
-              )}
-            </div>
-          </div>
-        ))}
+      <KpiStrip d={d} />
+
+      <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-[1.7fr_1fr_1fr_1.1fr]">
+        <Card title="Peta Risiko Nasional" className="lg:col-span-2 2xl:col-span-1" action={<Link href="/risk-mapping-gis" className="text-xs underline">Buka Peta Penuh</Link>}>
+          <OverviewMap provinces={provinces} height={250} />
+        </Card>
+        <Composition d={d} />
+        <Card title="Tren Tingkat Risiko per Periode" className="h-full" bodyClassName="flex items-center">
+          {d.trend.length >= 2 ? <div className="w-full"><TrendChart trend={d.trend} /></div> : <p className="text-sm text-slate-600">Tren butuh minimal dua periode penilaian.</p>}
+        </Card>
+        <div className="lg:col-span-2 2xl:col-span-1"><EarlyWarning d={d} /></div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card title="Peta Risiko Nasional" className="lg:col-span-2" action={<Link href="/risk-map" className="text-xs underline">Buka Peta Penuh</Link>}>
-          <OverviewMap provinces={provinces} />
-        </Card>
-        <Card title="Distribusi Risiko" bodyClassName="flex items-center justify-center"><RiskChart distribution={d.distribution} total={d.total_objects} /></Card>
+      <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
+        <CategorySpread provinces={provinces} />
+        <TopProvinces provinces={provinces} />
+        <ProgramStatus />
+        <ProgramImpact />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card title="Tren Tingkat Risiko per Periode" className="lg:col-span-2">
-          {d.trend.length >= 2
-            ? <TrendChart trend={d.trend} />
-            : <p className="text-sm text-slate-600">Tren butuh minimal dua periode penilaian.</p>}
-        </Card>
-        <Card title="Early Warning Terbuka" bodyClassName="flex items-center" action={<Link href="/early-warnings" className="text-xs underline">Lihat Semua</Link>}>
-          <ul className="w-full space-y-3">
-            {([["HIGH", "Peringatan tingkat tinggi"], ["MEDIUM", "Perubahan tajam perlu diperiksa"], ["LOW", "Perlu verifikasi data"]] as const).map(([k, text]) => (
-              <li key={k} className="flex items-center gap-3">
-                <span className="w-12 text-right text-2xl font-bold">{d.open_warnings[k]}</span>
-                <span className="text-sm">{text}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card title="Top Objek yang Perlu Ditinjau" className="overflow-x-auto lg:col-span-2">
-          {d.priority.length === 0 ? <p className="text-sm text-slate-600">Belum ada objek yang dinilai.</p> : (
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
-                <tr><th className="py-2">Objek</th><th>Provinsi</th><th>Skor</th><th>Tingkat</th><th title="Data confidence, terpisah dari skor">Confidence</th></tr>
-              </thead>
-              <tbody>
-                {d.priority.map((p) => (
-                  <tr key={p.id} className="border-t border-slate-100">
-                    <td className="py-2.5 font-medium"><Link href={`/cultural-objects/${p.id}`} className="text-navy-2 hover:underline">{p.name}</Link></td>
-                    <td>{p.province ?? "—"}</td>
-                    <td className="font-semibold">{p.score.toFixed(0)}</td>
-                    <td><RiskBadge level={p.level} /></td>
-                    <td>{p.data_confidence.toFixed(2).replace(".", ",")}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Card>
-        <Card title="Kualitas & Kemutakhiran Data" bodyClassName="flex items-center">
-          <ul className="w-full space-y-4">
-            {quality.map(([label, v]) => (
-              <li key={label}>
-                <div className="flex justify-between text-sm"><span>{label}</span><span className="font-semibold">{pct(v)}</span></div>
-                <div className="mt-1 h-2 rounded-full bg-slate-100" role="progressbar" aria-valuenow={Math.round((v ?? 0) * 100)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
-                  <div className="h-2 rounded-full bg-gold" style={{ width: `${(v ?? 0) * 100}%` }} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </div>
+      <InsightBand top={top} insight={insight} recs={recs} />
     </div>
   );
 }

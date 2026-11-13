@@ -2,7 +2,7 @@ const MAP = {
   HIGH: { label: "Tinggi", cls: "bg-red-50 text-risk-high ring-red-200", icon: "▲" },
   MEDIUM: { label: "Sedang", cls: "bg-amber-50 text-amber-700 ring-amber-200", icon: "●" },
   LOW: { label: "Rendah", cls: "bg-green-50 text-risk-low ring-green-200", icon: "✓" },
-  INSUFFICIENT_DATA: { label: "Data kurang", cls: "bg-slate-100 text-slate-600 ring-slate-200", icon: "?" },
+  INSUFFICIENT_DATA: { label: "Data Kurang", cls: "bg-slate-100 text-slate-600 ring-slate-200", icon: "?" },
 } as const;
 
 export type RiskLevel = keyof typeof MAP;

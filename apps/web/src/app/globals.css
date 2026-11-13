@@ -42,3 +42,11 @@ h1, h2, h3, h4, th, label, legend, summary, button, .cap { text-transform: capit
 @media (prefers-reduced-motion: no-preference) {
   .app-main { scroll-behavior: smooth; }
 }
+
+/* Ilustrasi sidebar: garis digambar bertahap tiap pindah halaman (pathLength diset di SidebarArt) */
+@keyframes art-draw { to { stroke-dashoffset: 0; } }
+@keyframes art-fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .art-draw :is(path, circle, ellipse):not([stroke-dasharray]) { stroke-dasharray: 1; stroke-dashoffset: 1; animation: art-draw 1.6s ease-out forwards; }
+  .art-draw .art-soft { animation: art-fade 1.6s ease-out; }
+}
