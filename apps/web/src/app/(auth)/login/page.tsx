@@ -50,7 +50,7 @@ export default function Login() {
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-2 focus:outline-gold" />
           </label>
           {error && <p role="alert" className="text-sm text-risk-high">{error}</p>}
-          <button disabled={busy} className="w-full rounded-lg bg-gold py-2.5 font-semibold text-navy hover:brightness-95 disabled:opacity-60">
+          <button disabled={busy} className="w-full btn-gold py-2.5 font-semibold text-navy disabled:opacity-60">
             {busy ? "Masuk…" : "Masuk"}
           </button>
         </form>

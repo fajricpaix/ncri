@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { Card } from "@/components/ui/Card";
 import { ProviderLabel } from "@/features/ai/AnalysisView";
 import { AskForm } from "@/features/ai/AskForm";
@@ -42,5 +43,5 @@ async function Content() {
 }
 
 export default function AiAssistant() {
-  return <Suspense fallback={<p className="text-sm text-slate-500">Memuat…</p>}><Content /></Suspense>;
+  return <Suspense fallback={<PageLoader label="Memuat…" />}><Content /></Suspense>;
 }

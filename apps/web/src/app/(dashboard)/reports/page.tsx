@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { PrintButton } from "@/features/reports/PrintButton";
 import { api } from "@/lib/api-server";
@@ -28,7 +29,7 @@ async function Report({ searchParams }: { searchParams: PageProps<"/reports">["s
               {regions.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}
             </select>
           </label>
-          <button className="rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-navy">Terapkan</button>
+          <button className="btn-gold px-3 py-2 text-sm font-semibold text-navy">Terapkan</button>
         </form>
         <PrintButton />
         <a href={`${API}/reports/objects.csv${q}`} className="text-sm text-navy-2 underline">Unduh CSV objek & risiko</a>
@@ -90,7 +91,7 @@ export default function Reports(props: PageProps<"/reports">) {
   return (
     <div className="space-y-4">
       <h2 className="print-hide text-xl font-bold">Reports</h2>
-      <Suspense fallback={<p className="text-sm text-slate-500">Menyusun laporan…</p>}>
+      <Suspense fallback={<PageLoader label="Menyusun laporan…" />}>
         <Report searchParams={props.searchParams} />
       </Suspense>
     </div>

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { Card } from "@/components/ui/Card";
 import { LlmSettings, type LlmSettingsData } from "@/features/settings/LlmSettings";
 import { UserAdmin } from "@/features/settings/UserAdmin";
@@ -42,7 +43,7 @@ export default function Settings() {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold">Settings</h2>
-      <Suspense fallback={<p className="text-sm text-slate-500">Memuat…</p>}><Content /></Suspense>
+      <Suspense fallback={<PageLoader label="Memuat…" />}><Content /></Suspense>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { Card } from "@/components/ui/Card";
 import { CsvImport } from "@/features/data-sources/CsvImport";
 import { api } from "@/lib/api-server";
@@ -29,7 +30,7 @@ export default function DataSources() {
     <div className="space-y-4">
       <h2 className="text-xl font-bold">Data Submission</h2>
       <Card title="Sumber Data" className="overflow-x-auto">
-        <Suspense fallback={<p className="text-sm text-slate-500">Memuat…</p>}><Sources /></Suspense>
+        <Suspense fallback={<PageLoader label="Memuat…" />}><Sources /></Suspense>
       </Card>
       <Card title="Import Observasi Indikator (CSV)">
         <CsvImport />

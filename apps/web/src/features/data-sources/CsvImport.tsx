@@ -51,7 +51,7 @@ export function CsvImport() {
           />
         </label>
         <button disabled={!file || busy} onClick={() => send(false)}
-          className="rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-navy disabled:opacity-50">
+          className="btn-gold px-4 py-2 text-sm font-semibold text-navy disabled:opacity-50">
           Validasi & pratinjau
         </button>
         <a href={`${API}/data-imports/template.csv`} className="text-sm text-navy-2 underline">Unduh template CSV</a>

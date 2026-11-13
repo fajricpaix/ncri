@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { Suspense } from "react";
 import { Card } from "@/components/ui/Card";
 import { ProviderLabel } from "@/features/ai/AnalysisView";
@@ -14,7 +15,7 @@ async function List() {
       {rows.map((r) => (
         <article key={r.id} className="space-y-2 rounded-xl p-4 ring-1 ring-slate-200">
           <header className="flex flex-wrap items-center gap-2">
-            <Link href={`/cultural-objects/${r.cultural_object_id}`} className="font-semibold text-navy-2 hover:underline">{r.object_name}</Link>
+            <Link href={`/cultural-repository/${r.cultural_object_id}`} className="font-semibold text-navy-2 hover:underline">{r.object_name}</Link>
             <StatusBadge status={r.status} />
             <ProviderLabel provider={r.provider} />
           </header>
@@ -36,7 +37,7 @@ export default function Recommendations() {
     <div className="space-y-4">
       <h2 className="text-xl font-bold">Recommendation Engine</h2>
       <p className="text-sm text-slate-600">Semua rekomendasi berstatus draft sampai disetujui manusia.</p>
-      <Card><Suspense fallback={<p className="text-sm text-slate-500">Memuat…</p>}><List /></Suspense></Card>
+      <Card><Suspense fallback={<PageLoader label="Memuat…" />}><List /></Suspense></Card>
     </div>
   );
 }
