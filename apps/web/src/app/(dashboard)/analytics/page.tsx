@@ -28,6 +28,11 @@ async function Content() {
             ))}
           </tbody>
         </table>
+        {s.excluded_simulated > 0 && (
+          <p role="note" className="mt-3 rounded-lg bg-gold-soft p-2 text-xs font-semibold text-amber-900">
+            {s.excluded_simulated} penilaian berbasis data SIMULATED tidak dihitung di sini. Data simulasi tidak boleh menjadi dasar kesiapan prediksi.
+          </p>
+        )}
         <p className="mt-3 text-xs text-slate-500">Ambang adalah usulan awal untuk dibahas dengan ahli statistik, bukan standar baku.</p>
       </Card>
 

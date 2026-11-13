@@ -13,6 +13,12 @@ cd ../../apps/web && yarn dev                       # web di http://localhost:30
 Buka halaman login; tombol **Admin / Analyst / Reviewer / Viewer** mengisi akun demo. Siapkan dua jendela: Analyst dan Reviewer.
 Opsional AI sungguhan: isi `LLM_PROVIDER=anthropic` + `LLM_API_KEY` di `services/api/.env`. Tanpa itu, AI = contoh deterministik yang **berlabel "bukan AI"**.
 
+## Data contoh lengkap (opsional, untuk demo yang kaya)
+```bash
+cd services/api && python -m app.sample_data          # development; di luar development tambahkan --yes
+```
+Menambah 61 objek, ±2.150 observasi 2019–2024, penilaian risiko, early warning (berbagai status), analisis AI & rekomendasi (draft/disetujui/ditolak, plus satu contoh penolakan guardrail), riwayat asisten, dan audit log. Idempoten. Semua AI memakai provider `fake` (berlabel "bukan AI"). Butuh akun ADMIN aktif untuk bagian AI/asisten; tanpa itu bagian tersebut dilewati.
+
 ## Alur
 | # | Aksi (role) | Yang ditunjukkan | Kalimat kunci |
 |---|---|---|---|

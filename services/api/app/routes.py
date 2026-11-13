@@ -285,12 +285,16 @@ def overview(db: Session = DB):
 
 def _prediction_status(db: Session) -> dict:
     series: dict[str, list] = {}
+    excluded = 0
     for a in db.scalars(select(m.RiskAssessment).where(m.RiskAssessment.method_version == METHOD_VERSION)):
+        if a.is_simulated:  # data simulasi TIDAK boleh dihitung sebagai bukti kesiapan prediksi
+            excluded += 1
+            continue
         series.setdefault(str(a.cultural_object_id), []).append(
             (a.period_end, None if a.risk_score is None else float(a.risk_score)))
     st = readiness.stats(series, settings.prediction_target_validated)
     # Belum ada model yang terdaftar => test_eval None => gerbang pasti menolak.
-    return {**readiness.gate(st, None), "stats": st, "target": "Objek berstatus HIGH pada periode penilaian berikutnya (PROVISIONAL, belum disetujui ahli)",
+    return {**readiness.gate(st, None), "stats": st, "excluded_simulated": excluded, "target": "Objek berstatus HIGH pada periode penilaian berikutnya (PROVISIONAL, belum disetujui ahli)",
             "baseline": "persistensi: status sekarang = status berikutnya"}
 
 

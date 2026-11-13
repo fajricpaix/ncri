@@ -21,8 +21,8 @@ def _load(db: Session, object_ids: list):
     return inds, by_obj
 
 
-def run(db: Session, object_id=None, user=None) -> dict:
-    ids = [object_id] if object_id else list(db.scalars(select(m.CulturalObject.id)))
+def run(db: Session, object_id=None, user=None, only_ids=None) -> dict:
+    ids = list(only_ids) if only_ids else ([object_id] if object_id else list(db.scalars(select(m.CulturalObject.id))))
     inds, by_obj = _load(db, ids)
     today = date.today()
     written = created = 0

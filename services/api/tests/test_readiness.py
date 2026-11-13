@@ -48,3 +48,10 @@ def test_gate_passes_only_when_everything_holds():
     oracle = lambda t: float(t.event)  # model sempurna (hanya untuk menguji gerbang)
     ev = r.evaluate(r.temporal_split(r.transitions(big))[1], oracle)
     assert r.gate(st, ev)["passed"]
+
+
+def test_stats_of_empty_series_means_nothing_is_ready():
+    """Dipakai saat semua penilaian berasal dari data simulasi (dikecualikan): tidak ada yang terpenuhi."""
+    st = r.stats({}, target_validated=False)
+    assert st["objects_with_series"] == 0 and st["transitions"] == 0
+    assert not any(q["met"] for q in r.requirements(st)) and not r.gate(st)["passed"]
