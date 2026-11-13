@@ -3,8 +3,9 @@ export type Region = { id: string; code: string; name: string; level: string };
 export type Indicator = { id: string; code: string; name: string; unit: string | null };
 export type DataSource = { id: string; code: string; name: string; source_type: string; description: string | null; is_active: boolean };
 export type CulturalObject = {
-  id: string; external_code: string | null; name: string; category: string;
-  region_id: string | null; verification_status: string; data_origin: Origin;
+  id: string; external_code: string | null; name: string; category: string; description: string | null;
+  region_id: string | null; latitude: number | null; longitude: number | null; source_id: string | null;
+  verification_status: string; data_origin: Origin;
 };
 export type Observation = {
   id: string; indicator_id: string; period_start: string; period_end: string;

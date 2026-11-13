@@ -1,7 +1,7 @@
 import uuid
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app import models as m
 from app.models import Origin, RegionLevel, SourceType, Verification
@@ -54,12 +54,37 @@ class CulturalObjectIn(BaseModel):
     data_origin: Origin  # wajib: tidak ada default supaya provenance selalu eksplisit
 
 
+class CulturalObjectUpdate(BaseModel):
+    """Edit sebagian. data_origin sengaja tidak ada: label SIMULATED tidak boleh diubah diam-diam."""
+    model_config = ConfigDict(extra="forbid")
+    external_code: str | None = None
+    name: str | None = Field(default=None, min_length=1)
+    category: str | None = Field(default=None, min_length=1)
+    description: str | None = None
+    region_id: uuid.UUID | None = None
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    source_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    def _required_stay_set(self):
+        # field wajib boleh dihilangkan dari body, tapi tidak boleh dikirim null
+        for f in ("name", "category"):
+            if f in self.model_fields_set and getattr(self, f) is None:
+                raise ValueError(f"{f} tidak boleh kosong")
+        return self
+
+
 class CulturalObjectOut(ORM):
     id: uuid.UUID
     external_code: str | None
     name: str
     category: str
+    description: str | None
     region_id: uuid.UUID | None
+    latitude: float | None
+    longitude: float | None
+    source_id: uuid.UUID | None
     verification_status: Verification
     data_origin: Origin
 

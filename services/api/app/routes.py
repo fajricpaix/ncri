@@ -91,6 +91,21 @@ def get_object(id: uuid.UUID, db: Session = DB):
     return _get_object(db, id)
 
 
+@router.patch("/cultural-objects/{id}", response_model=s.CulturalObjectOut)
+def update_object(id: uuid.UUID, body: s.CulturalObjectUpdate, user: m.User = auth.ANALYST, db: Session = DB):
+    obj = _get_object(db, id)
+    changes = {k: v for k, v in body.model_dump(exclude_unset=True).items() if getattr(obj, k) != v}
+    code = changes.get("external_code")
+    if code and db.scalar(select(m.CulturalObject).where(m.CulturalObject.external_code == code)):
+        raise HTTPException(409, "external_code sudah dipakai")
+    for k, v in changes.items():
+        setattr(obj, k, v)
+    if changes:
+        auth.audit(db, user, "object.update", "cultural_object", obj.id, {"fields": sorted(changes)})
+        db.commit()
+    return obj
+
+
 @router.get("/cultural-objects/{id}/indicators", response_model=list[s.ObservationOut])
 def object_indicators(id: uuid.UUID, db: Session = DB):
     _get_object(db, id)

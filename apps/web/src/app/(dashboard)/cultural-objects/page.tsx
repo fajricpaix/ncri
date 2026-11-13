@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Card } from "@/components/ui/Card";
 import { OriginBadge } from "@/components/ui/OriginBadge";
-import { api } from "@/lib/api-server";
+import { api, getMe } from "@/lib/api-server";
+import { can } from "@/lib/permissions";
 import type { CulturalObject, Region } from "@/types/api";
 
 async function List() {
@@ -35,10 +36,19 @@ async function List() {
   );
 }
 
+async function AddButton() {
+  const me = await getMe();
+  if (!can(me.role, "analyze")) return null;
+  return <Link href="/cultural-objects/new" className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white">+ Tambah objek</Link>;
+}
+
 export default function CulturalObjects() {
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">Cultural Objects</h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-xl font-bold">Cultural Objects</h2>
+        <Suspense fallback={null}><AddButton /></Suspense>
+      </div>
       <Card className="overflow-x-auto">
         <Suspense fallback={<p className="text-sm text-slate-500">Memuat…</p>}>
           <List />

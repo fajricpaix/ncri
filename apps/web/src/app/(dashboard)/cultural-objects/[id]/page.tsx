@@ -7,7 +7,8 @@ import { RunRiskButton } from "@/features/overview/RunRiskButton";
 import { OriginBadge } from "@/components/ui/OriginBadge";
 import { AiPanel } from "@/features/ai/AiPanel";
 import { ObservationChart } from "@/features/cultural-objects/ObservationChart";
-import { api, serverFetch } from "@/lib/api-server";
+import { api, getMe, serverFetch } from "@/lib/api-server";
+import { can } from "@/lib/permissions";
 import type { CulturalObject, Indicator, Analysis, Observation, Risk } from "@/types/api";
 
 function RiskPanel({ risk }: { risk: Risk }) {
@@ -71,6 +72,7 @@ async function Detail({ params }: { params: PageProps<"/cultural-objects/[id]">[
   const riskRes = await serverFetch(`/cultural-objects/${id}/risk`);
   const risk: Risk | null = riskRes.ok ? await riskRes.json() : null;
   const analyses = await api<Analysis[]>(`/cultural-objects/${id}/analyses`);
+  const me = await getMe();
   const name = new Map(inds.map((i) => [i.id, i.name]));
   const years = [...new Set(obs.map((o) => o.period_end.slice(0, 4)))].sort();
   const byInd = new Map<string, Map<string, number | null>>();
@@ -87,7 +89,11 @@ async function Detail({ params }: { params: PageProps<"/cultural-objects/[id]">[
         <h2 className="text-xl font-bold">{obj.name}</h2>
         <OriginBadge origin={obj.data_origin} />
         <span className="text-sm text-slate-500">{obj.category} · verifikasi: {obj.verification_status}</span>
+        {can(me.role, "analyze") && (
+          <Link href={`/cultural-objects/${id}/edit`} className="ml-auto rounded-lg px-3 py-1.5 text-sm ring-1 ring-slate-300 hover:bg-slate-50">Edit</Link>
+        )}
       </div>
+      {obj.description && <p className="max-w-3xl text-sm text-slate-700">{obj.description}</p>}
       <Card title="Penilaian Risiko" action={<RunRiskButton objectId={id} />}>
         {risk ? <RiskPanel risk={risk} /> : (
           <p className="text-sm text-slate-600">Belum ada penilaian. Klik “Hitung ulang risiko”. Objek dengan data kurang tetap berstatus INSUFFICIENT_DATA.</p>
