@@ -69,6 +69,12 @@ def main():
             g = "wordmark-subtitle"
         else:
             g = "wordmark-tagline"
+        if g == "flag-white" and not (cx > 560 and cy < 200 or (x1 - x0) * (y1 - y0) > 5000):
+            # putih hanya untuk bendera; kilau kecil lain (kepala, mata, stupa) disesuaikan warnanya
+            if cx > 600 and cy > 400:
+                g, el = "emblem-navy", el.replace(fill, "#7c8aa5")
+            else:
+                g, el = "emblem-gold", el.replace(fill, "#f0d796")
         groups.setdefault(g, []).append((el, (x0, y0, x1, y1)))
 
     order = ["wings-note", "flag-red", "flag-white", "emblem-gold", "emblem-navy", "wordmark-gold", "wordmark-letters",
@@ -86,10 +92,10 @@ def main():
     pad = 6
     open(f"{OUT}/ncri-icon.svg", "w").write(head.format(vb=f"{ex0 - pad:.0f} {ey0 - pad:.0f} {ex1 - ex0 + 2 * pad:.0f} {ey1 - ey0 + 2 * pad:.0f}")
                                             .replace("NCRI - National Cultural Risk Intelligence", "NCRI") + f'\n<g id="emblem">{block(emb)}</g>\n</svg>\n')
-    # varian untuk latar gelap: bagian navy diterangkan (wajah, stupa, pola) agar tidak lebur dengan sidebar
+    # varian untuk latar gelap: navy digeser ke biru sedang (wajah, stupa, pola) agar terlihat; putih hanya bendera
     def lighten(m):
         c = [int(m.group(1)[i:i + 2], 16) for i in (0, 2, 4)]
-        return 'fill="#%02x%02x%02x"' % tuple(round(255 - (255 - v) * 0.14) for v in c)
+        return 'fill="#%02x%02x%02x"' % tuple(round(v + (t - v) * 0.55) for v, t in zip(c, (130, 170, 225)))
     dark = open(f"{OUT}/ncri-icon.svg").read()
     a = dark.index('<g id="emblem-navy">')
     b = dark.index("</g>", a)
