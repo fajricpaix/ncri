@@ -3,9 +3,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { ROLE_LABEL, type Role, type User } from "@/lib/permissions";
+import { Select } from "@/components/ui/Select";
 
 const ROLES = Object.keys(ROLE_LABEL) as Role[];
-const input = "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-2 focus:outline-gold";
+const input = "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-slate-400 hover:border-slate-400 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold";
 
 export function UserAdmin({ users, meId }: { users: User[]; meId: string }) {
   const router = useRouter();
@@ -42,11 +43,11 @@ export function UserAdmin({ users, meId }: { users: User[]; meId: string }) {
                 <td className="py-2.5 font-medium">{u.name}{u.id === meId && <span className="ml-2 text-xs text-slate-500">(Anda)</span>}</td>
                 <td>{u.email}</td>
                 <td>
-                  <select aria-label={`Role ${u.email}`} value={u.role} disabled={u.id === meId}
-                    onChange={(e) => call(`/users/${u.id}`, "PATCH", { role: e.target.value })}
-                    className="rounded-md border border-slate-300 px-2 py-1">
+                  <Select aria-label={`Role ${u.email}`} value={u.role} disabled={u.id === meId}
+                    onValueChange={(v) => call(`/users/${u.id}`, "PATCH", { role: v })}
+                    className="min-w-36 !py-1">
                     {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
-                  </select>
+                  </Select>
                 </td>
                 <td>
                   <input type="checkbox" aria-label={`Aktif ${u.email}`} checked={u.is_active} disabled={u.id === meId}
@@ -62,9 +63,9 @@ export function UserAdmin({ users, meId }: { users: User[]; meId: string }) {
         <label className="text-sm font-medium">Email<input required type="email" className={input} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label>
         <label className="text-sm font-medium">Kata sandi awal<input required type="password" minLength={10} autoComplete="new-password" className={input} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></label>
         <label className="text-sm font-medium">Role
-          <select className={input} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })}>
+          <Select className="mt-1 w-full" value={form.role} onValueChange={(v) => setForm({ ...form, role: v as Role })}>
             {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
-          </select>
+          </Select>
         </label>
         <button className="self-end rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white">Tambah pengguna</button>
       </form>

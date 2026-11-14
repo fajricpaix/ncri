@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="834" height="168" viewBox="0 0 834 168" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="13" role="img" aria-label="Contoh format CSV objects">
+<rect width="834" height="168" rx="10" fill="#fff" stroke="#cbd5e1"/>
+<rect x="0" y="0" width="145.0" height="34" fill="#142038"/>
+<text x="14" y="22" fill="#fff" font-weight="700">external_code</text>
+<rect x="145.0" y="0" width="199.0" height="34" fill="#142038"/>
+<text x="159.0" y="22" fill="#fff" font-weight="700">name</text>
+<rect x="344.0" y="0" width="109.0" height="34" fill="#142038"/>
+<text x="358.0" y="22" fill="#fff" font-weight="700">category</text>
+<rect x="453.0" y="0" width="127.0" height="34" fill="#142038"/>
+<text x="467.0" y="22" fill="#fff" font-weight="700">region_code</text>
+<rect x="580.0" y="0" width="127.0" height="34" fill="#142038"/>
+<text x="594.0" y="22" fill="#fff" font-weight="700">data_origin</text>
+<rect x="707.0" y="0" width="127.0" height="34" fill="#64748b"/>
+<text x="721.0" y="22" fill="#fff" font-weight="700">source_code</text>
+<rect x="0" y="34" width="834" height="34" fill="#fff"/>
+<text x="14" y="56" fill="#1e293b">OBJ-001</text>
+<text x="159.0" y="56" fill="#1e293b">Nama Objek Budaya A</text>
+<text x="358.0" y="56" fill="#1e293b">Kesenian</text>
+<text x="467.0" y="56" fill="#1e293b">32</text>
+<text x="594.0" y="56" fill="#1e293b">PUBLIC</text>
+<text x="721.0" y="56" fill="#1e293b">SRC-01</text>
+<rect x="0" y="68" width="834" height="34" fill="#f8fafc"/>
+<text x="14" y="90" fill="#1e293b">OBJ-002</text>
+<text x="159.0" y="90" fill="#1e293b">Nama Objek Budaya B</text>
+<text x="358.0" y="90" fill="#1e293b">Kerajinan</text>
+<text x="467.0" y="90" fill="#1e293b">33</text>
+<text x="594.0" y="90" fill="#1e293b">PARTNER</text>
+<text x="721.0" y="90" fill="#1e293b">SRC-02</text>
+<text x="14" y="122" font-family="system-ui, sans-serif" font-size="12" fill="#475569">Kolom gelap = wajib · kolom abu = opsional</text>
+<text x="14" y="139" font-family="system-ui, sans-serif" font-size="12" fill="#475569">region_code = kode provinsi · data_origin: PUBLIC atau PARTNER · source_code harus sudah diimpor di langkah 1</text>
+<text x="14" y="156" font-family="system-ui, sans-serif" font-size="12" fill="#94a3b8">Contoh format saja, bukan data sungguhan. Isi dengan data nyata yang punya sumber.</text>
+</svg>

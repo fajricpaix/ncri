@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { useCan } from "@/lib/user-context";
 import type { AiSubmission, Region } from "@/types/api";
+import { Select } from "@/components/ui/Select";
 
 const safeUrl = (u: string) => {
   try { const x = new URL(u); return x.protocol === "http:" || x.protocol === "https:" ? x.href : null; } catch { return null; }
@@ -109,12 +110,12 @@ export function AiDiscovery() {
         <form onSubmit={(e) => { e.preventDefault(); search(); }} className="flex flex-wrap items-center gap-3">
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Contoh: Wayang Kulit, jumlah dalang"
             aria-label="Topik pencarian" minLength={3} maxLength={200} required
-            className="min-w-64 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-          <select value={region} onChange={(e) => setRegion(e.target.value)} aria-label="Provinsi"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            className="min-w-64 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-slate-400 hover:border-slate-400 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold" />
+          <Select value={region} onValueChange={setRegion} aria-label="Provinsi"
+            className="min-w-48">
             <option value="">Semua Provinsi</option>
             {regions.map((r) => <option key={r.code} value={r.code}>{r.name}</option>)}
-          </select>
+          </Select>
           <button disabled={busy !== null || query.trim().length < 3} className="btn-gold px-4 py-2 text-sm font-semibold text-navy disabled:opacity-50">
             {busy === "search" ? "Mencari…" : "Cari Dengan AI"}
           </button>

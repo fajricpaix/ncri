@@ -2,13 +2,15 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { apiFetch } from "@/lib/api-client";
+import { Select } from "@/components/ui/Select";
 
 export type LlmSettingsData = {
   provider: string; model: string; source: "database" | "env";
   api_key_set: boolean; api_key_hint: string | null; default_models: Record<string, string>; models: Record<string, string[]>;
   updated_at: string | null; last_test: { ok: boolean; message: string; at: string } | null;
 };
-const input = "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-2 focus:outline-gold";
+const input = "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-slate-400 hover:border-slate-400 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold";
+const selCls = "mt-1 w-full";
 
 export function LlmSettings({ data }: { data: LlmSettingsData }) {
   const router = useRouter();
@@ -59,15 +61,15 @@ export function LlmSettings({ data }: { data: LlmSettingsData }) {
       )}
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="text-sm font-medium">Penyedia
-          <select className={input} value={provider} onChange={(e) => { setProvider(e.target.value); setModel(data.default_models[e.target.value]); }}>
+          <Select className={selCls} value={provider} onValueChange={(v) => { setProvider(v); setModel(data.default_models[v]); }}>
             <option value="gemini">Google Gemini (ada free tier)</option>
             <option value="anthropic">Anthropic (berbayar)</option>
-          </select>
+          </Select>
         </label>
         <label className="text-sm font-medium">Model
-          <select className={input} value={model} onChange={(e) => setModel(e.target.value)}>
+          <Select className={selCls} value={model} onValueChange={setModel}>
             {data.models[provider].map((m) => <option key={m} value={m}>{m}</option>)}
-          </select>
+          </Select>
         </label>
         <div className="text-sm font-medium">API key
           {data.api_key_hint && !changeKey ? (

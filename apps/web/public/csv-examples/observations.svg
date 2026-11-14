@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1069" height="236" viewBox="0 0 1069 236" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="13" role="img" aria-label="Contoh format CSV observations">
+<rect width="1069" height="236" rx="10" fill="#fff" stroke="#cbd5e1"/>
+<rect x="0" y="0" width="208.0" height="34" fill="#142038"/>
+<text x="14" y="22" fill="#fff" font-weight="700">object_external_code</text>
+<rect x="208.0" y="0" width="208.0" height="34" fill="#142038"/>
+<text x="222.0" y="22" fill="#fff" font-weight="700">indicator_code</text>
+<rect x="416.0" y="0" width="136.0" height="34" fill="#142038"/>
+<text x="430.0" y="22" fill="#fff" font-weight="700">period_start</text>
+<rect x="552.0" y="0" width="118.0" height="34" fill="#142038"/>
+<text x="566.0" y="22" fill="#fff" font-weight="700">period_end</text>
+<rect x="670.0" y="0" width="145.0" height="34" fill="#142038"/>
+<text x="684.0" y="22" fill="#fff" font-weight="700">value_numeric</text>
+<rect x="815.0" y="0" width="127.0" height="34" fill="#142038"/>
+<text x="829.0" y="22" fill="#fff" font-weight="700">source_code</text>
+<rect x="942.0" y="0" width="127.0" height="34" fill="#142038"/>
+<text x="956.0" y="22" fill="#fff" font-weight="700">data_origin</text>
+<rect x="0" y="34" width="1069" height="34" fill="#fff"/>
+<text x="14" y="56" fill="#1e293b">OBJ-001</text>
+<text x="222.0" y="56" fill="#1e293b">ACTIVE_PRACTITIONERS</text>
+<text x="430.0" y="56" fill="#1e293b">2023-01-01</text>
+<text x="566.0" y="56" fill="#1e293b">2023-12-31</text>
+<text x="684.0" y="56" fill="#1e293b">52</text>
+<text x="829.0" y="56" fill="#1e293b">SRC-01</text>
+<text x="956.0" y="56" fill="#1e293b">PUBLIC</text>
+<rect x="0" y="68" width="1069" height="34" fill="#f8fafc"/>
+<text x="14" y="90" fill="#1e293b">OBJ-001</text>
+<text x="222.0" y="90" fill="#1e293b">ACTIVE_PRACTITIONERS</text>
+<text x="430.0" y="90" fill="#1e293b">2024-01-01</text>
+<text x="566.0" y="90" fill="#1e293b">2024-12-31</text>
+<text x="684.0" y="90" fill="#1e293b">45</text>
+<text x="829.0" y="90" fill="#1e293b">SRC-01</text>
+<text x="956.0" y="90" fill="#1e293b">PUBLIC</text>
+<rect x="0" y="102" width="1069" height="34" fill="#fff"/>
+<text x="14" y="124" fill="#1e293b">OBJ-001</text>
+<text x="222.0" y="124" fill="#1e293b">SUCCESSORS</text>
+<text x="430.0" y="124" fill="#1e293b">2023-01-01</text>
+<text x="566.0" y="124" fill="#1e293b">2023-12-31</text>
+<text x="684.0" y="124" fill="#1e293b">20</text>
+<text x="829.0" y="124" fill="#1e293b">SRC-01</text>
+<text x="956.0" y="124" fill="#1e293b">PUBLIC</text>
+<rect x="0" y="136" width="1069" height="34" fill="#f8fafc"/>
+<text x="14" y="158" fill="#1e293b">OBJ-001</text>
+<text x="222.0" y="158" fill="#1e293b">SUCCESSORS</text>
+<text x="430.0" y="158" fill="#1e293b">2024-01-01</text>
+<text x="566.0" y="158" fill="#1e293b">2024-12-31</text>
+<text x="684.0" y="158" fill="#1e293b">14</text>
+<text x="829.0" y="158" fill="#1e293b">SRC-01</text>
+<text x="956.0" y="158" fill="#1e293b">PUBLIC</text>
+<text x="14" y="190" font-family="system-ui, sans-serif" font-size="12" fill="#475569">Kolom gelap = wajib · kolom abu = opsional</text>
+<text x="14" y="207" font-family="system-ui, sans-serif" font-size="12" fill="#475569">object_external_code dan source_code harus sudah diimpor · satu baris = satu indikator di satu periode</text>
+<text x="14" y="224" font-family="system-ui, sans-serif" font-size="12" fill="#94a3b8">Contoh format saja, bukan data sungguhan. Isi dengan data nyata yang punya sumber.</text>
+</svg>

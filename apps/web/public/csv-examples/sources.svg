@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="168" viewBox="0 0 860 168" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="13" role="img" aria-label="Contoh format CSV sources">
+<rect width="860" height="168" rx="10" fill="#fff" stroke="#cbd5e1"/>
+<rect x="0" y="0" width="82.0" height="34" fill="#142038"/>
+<text x="14" y="22" fill="#fff" font-weight="700">code</text>
+<rect x="82.0" y="0" width="208.0" height="34" fill="#142038"/>
+<text x="96.0" y="22" fill="#fff" font-weight="700">name</text>
+<rect x="290.0" y="0" width="127.0" height="34" fill="#142038"/>
+<text x="304.0" y="22" fill="#fff" font-weight="700">source_type</text>
+<rect x="417.0" y="0" width="190.0" height="34" fill="#64748b"/>
+<text x="431.0" y="22" fill="#fff" font-weight="700">description</text>
+<rect x="607.0" y="0" width="253.0" height="34" fill="#64748b"/>
+<text x="621.0" y="22" fill="#fff" font-weight="700">terms_url</text>
+<rect x="0" y="34" width="860" height="34" fill="#fff"/>
+<text x="14" y="56" fill="#1e293b">SRC-01</text>
+<text x="96.0" y="56" fill="#1e293b">Nama Lembaga Sumber</text>
+<text x="304.0" y="56" fill="#1e293b">GOVERNMENT</text>
+<text x="431.0" y="56" fill="#1e293b">Keterangan singkat</text>
+<text x="621.0" y="56" fill="#1e293b">https://contoh.go.id/data</text>
+<rect x="0" y="68" width="860" height="34" fill="#f8fafc"/>
+<text x="14" y="90" fill="#1e293b">SRC-02</text>
+<text x="96.0" y="90" fill="#1e293b">Nama Survei Lapangan</text>
+<text x="304.0" y="90" fill="#1e293b">SURVEY</text>
+<text x="431.0" y="90" fill="#1e293b"></text>
+<text x="621.0" y="90" fill="#1e293b"></text>
+<text x="14" y="122" font-family="system-ui, sans-serif" font-size="12" fill="#475569">Kolom gelap = wajib · kolom abu = opsional</text>
+<text x="14" y="139" font-family="system-ui, sans-serif" font-size="12" fill="#475569">source_type: GOVERNMENT, COMMUNITY, SURVEY, PUBLIC_DATA, atau MANUAL</text>
+<text x="14" y="156" font-family="system-ui, sans-serif" font-size="12" fill="#94a3b8">Contoh format saja, bukan data sungguhan. Isi dengan data nyata yang punya sumber.</text>
+</svg>
