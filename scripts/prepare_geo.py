@@ -1,21 +1,24 @@
-"""Siapkan GeoJSON provinsi untuk peta: python scripts/prepare_geo.py <geoBoundaries-IDN-ADM1_simplified.geojson>
+"""Siapkan GeoJSON provinsi untuk peta: python scripts/prepare_geo.py <indonesia-38-provinces.geojson>
 
-Sumber: geoBoundaries gbOpen IDN ADM1 (OpenStreetMap/Wambacher, ODbL 1.0, tahun 2017, 34 provinsi).
-https://github.com/wmgeolab/geoBoundaries/raw/9469f09/releaseData/gbOpen/IDN/ADM1/geoBoundaries-IDN-ADM1_simplified.geojson
+Sumber: denyherianto/indonesia-geojson-topojson-maps-with-38-provinces (CC BY 4.0), 38 provinsi pasca-pemekaran Papua.
+https://github.com/denyherianto/indonesia-geojson-topojson-maps-with-38-provinces/raw/main/GeoJSON/indonesia-38-provinces.geojson
+Kode di berkas sumber untuk 4 provinsi baru salah (semua 91/92), jadi kode diambil dari NAMA (tabel CODE).
 Keluaran dipangkas (koordinat 3 desimal, pulau sangat kecil dibuang) agar ringan; hanya properti `code`.
 """
 import json
 import sys
 
 CODE = {
-    "Aceh": "11", "North Sumatra": "12", "West Sumatra": "13", "Riau": "14", "Jambi": "15", "South Sumatra": "16",
-    "Bengkulu": "17", "Lampung": "18", "Bangka-Belitung Islands": "19", "Riau Islands": "21",
-    "Jakarta Special Capital Region": "31", "West Java": "32", "Central Java": "33",
-    "Special Region of Yogyakarta": "34", "East Java": "35", "Banten": "36", "Bali": "51",
-    "West Nusa Tenggara": "52", "East Nusa Tenggara": "53", "West Kalimantan": "61", "Central Kalimantan": "62",
-    "South Kalimantan": "63", "East Kalimantan": "64", "North Kalimantan": "65", "North Sulawesi": "71",
-    "Central Sulawesi": "72", "South Sulawesi": "73", "Southeast Sulawesi": "74", "Gorontalo": "75",
-    "West Sulawesi": "76", "Maluku": "81", "North Maluku": "82", "Papua": "91", "West Papua": "92",
+    "Aceh": "11", "Sumatera Utara": "12", "Sumatera Barat": "13", "Riau": "14", "Jambi": "15",
+    "Sumatera Selatan": "16", "Bengkulu": "17", "Lampung": "18", "Kepulauan Bangka Belitung": "19",
+    "Kepulauan Riau": "21", "DKI Jakarta": "31", "Jawa Barat": "32", "Jawa Tengah": "33",
+    "Daerah Istimewa Yogyakarta": "34", "Jawa Timur": "35", "Banten": "36", "Bali": "51",
+    "Nusa Tenggara Barat": "52", "Nusa Tenggara Timur": "53", "Kalimantan Barat": "61",
+    "Kalimantan Tengah": "62", "Kalimantan Selatan": "63", "Kalimantan Timur": "64", "Kalimantan Utara": "65",
+    "Sulawesi Utara": "71", "Sulawesi Tengah": "72", "Sulawesi Selatan": "73", "Sulawesi Tenggara": "74",
+    "Gorontalo": "75", "Sulawesi Barat": "76", "Maluku": "81", "Maluku Utara": "82", "Papua": "91",
+    "Papua Barat": "92", "Papua Selatan": "93", "Papua Tengah": "94", "Papua Pegunungan": "95",
+    "Papua Barat Daya": "96",
 }
 MIN_BBOX_AREA = 0.0015  # derajat^2; di bawah ini dianggap pulau kecil dan dibuang
 
@@ -61,7 +64,7 @@ def main(src, dst="apps/web/public/geo/idn-adm1.json"):
     g = json.load(open(src))
     feats = []
     for f in g["features"]:
-        code = CODE[f["properties"]["shapeName"]]
+        code = CODE[f["properties"]["PROVINSI"]]
         geom = f["geometry"]
         polys = geom["coordinates"] if geom["type"] == "MultiPolygon" else [geom["coordinates"]]
         keep = []
@@ -72,7 +75,7 @@ def main(src, dst="apps/web/public/geo/idn-adm1.json"):
         assert keep, code
         feats.append({"type": "Feature", "properties": {"code": code},
                       "geometry": {"type": "MultiPolygon", "coordinates": keep}})
-    assert len(feats) == 34 and len({f["properties"]["code"] for f in feats}) == 34
+    assert len(feats) == 38 and len({f["properties"]["code"] for f in feats}) == 38
     json.dump({"type": "FeatureCollection", "features": feats}, open(dst, "w"), separators=(",", ":"))
     print(dst, len(feats), "provinsi")
 

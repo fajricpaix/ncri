@@ -8,11 +8,11 @@ import { RiskBadge } from "@/components/ui/RiskBadge";
 import { LEVEL_LABEL } from "@/features/map/levels";
 import { Legend, RiskMap } from "@/features/map/RiskMap";
 import type { MapLevel, ProvinceSummary, RiskLevelName } from "@/types/api";
+import { Select } from "@/components/ui/Select";
 
 type Obj = ProvinceSummary["objects"][number] & { province: string; pcode: string };
 const LEVELS: RiskLevelName[] = ["HIGH", "MEDIUM", "LOW", "INSUFFICIENT_DATA"];
 const BAR: Record<RiskLevelName, string> = { HIGH: "bg-risk-high", MEDIUM: "bg-risk-mid", LOW: "bg-risk-low", INSUFFICIENT_DATA: "bg-risk-none" };
-const sel = "raw mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-navy outline-none focus:ring-2 focus:ring-gold";
 // Ambang level dari docs/risk-methodology.md (70/40); hanya untuk warna & label gauge
 const scoreLevel = (s: number): RiskLevelName => (s >= 70 ? "HIGH" : s >= 40 ? "MEDIUM" : "LOW");
 const avg = (xs: number[]) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : null);
@@ -67,7 +67,7 @@ export function RiskMappingGis({ provinces, initial }: { provinces: ProvinceSumm
             <RiskMap provinces={provinces} selected={prov} levelFilter={lvl} onSelect={(c) => setProv((p) => (p === c ? null : c))} height={460} />
             <div className="mt-3 space-y-1">
               <Legend />
-              <p className="text-xs text-slate-500">Warna = skor rata-rata objek yang dinilai di provinsi itu (bisa menyembunyikan satu objek berisiko tinggi); tidak terpengaruh filter jenis. Batas provinsi 2017: pemekaran Papua digambar sebagai induknya. Klik provinsi lagi untuk melepas pilihan.</p>
+              <p className="text-xs text-slate-500">Warna = skor rata-rata objek yang dinilai di provinsi itu (bisa menyembunyikan satu objek berisiko tinggi); tidak terpengaruh filter jenis. Klik provinsi lagi untuk melepas pilihan.</p>
             </div>
           </Card>
         </div>
@@ -79,7 +79,6 @@ export function RiskMappingGis({ provinces, initial }: { provinces: ProvinceSumm
                 <p className="raw text-lg font-bold text-navy">{scope}</p>
                 {sp && <span className="text-xs text-slate-500">Kode: {sp.code}</span>}
               </div>
-              {sp?.merged_note && <p className="text-xs text-slate-500">{sp.merged_note}</p>}
               <div className="grid grid-cols-4 gap-2 text-center">
                 {([["Objek", scoped.length, "text-navy"], ["Tinggi", count("HIGH"), "text-risk-high"], ["Sedang", count("MEDIUM"), "text-risk-mid"], ["Rendah", count("LOW"), "text-risk-low"]] as const).map(([l, v, c]) => (
                   <div key={l} className="rounded-xl bg-slate-50 py-2 ring-1 ring-slate-200"><p className={`text-xl font-bold ${c}`}>{v}</p><p className="cap text-[11px] text-slate-500">{l}</p></div>
@@ -122,22 +121,22 @@ export function RiskMappingGis({ provinces, initial }: { provinces: ProvinceSumm
       <Card title={`Daftar Objek Budaya (${scope})`} icon={Landmark} action={<span className="text-xs">{rows.length} objek</span>} className="overflow-hidden" bodyClassName="p-0">
         <div className="grid gap-3 border-b border-slate-100 p-4 sm:grid-cols-2 lg:grid-cols-[repeat(3,1fr)_auto]">
           <label className="block text-xs font-semibold text-navy">Jenis Budaya
-            <select value={cat} onChange={(e) => setCat(e.target.value)} className={sel}>
+            <Select value={cat} onValueChange={setCat} className="mt-1 w-full">
               <option value="">Semua Jenis</option>
               {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+            </Select>
           </label>
           <label className="block text-xs font-semibold text-navy">Provinsi
-            <select value={prov ?? ""} onChange={(e) => setProv(e.target.value || null)} className={sel}>
+            <Select value={prov ?? ""} onValueChange={(v) => setProv(v || null)} className="mt-1 w-full">
               <option value="">Semua Provinsi</option>
               {provinces.filter((p) => p.n_objects > 0).map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}
-            </select>
+            </Select>
           </label>
           <label className="block text-xs font-semibold text-navy">Tingkat Risiko
-            <select value={lvl} onChange={(e) => setLvl(e.target.value as MapLevel | "ALL")} className={sel}>
+            <Select value={lvl} onValueChange={(v) => setLvl(v as MapLevel | "ALL")} className="mt-1 w-full">
               <option value="ALL">Semua Risiko</option>
               {LEVELS.map((l) => <option key={l} value={l}>{LEVEL_LABEL[l]}</option>)}
-            </select>
+            </Select>
           </label>
           <button onClick={reset} className="inline-flex items-center justify-center gap-1.5 self-end rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-navy hover:bg-slate-50"><RotateCcw size={14} aria-hidden />Reset</button>
         </div>

@@ -68,7 +68,7 @@ export function RiskMap({ provinces, selected = null, levelFilter = "ALL", onSel
     };
     lockMinZoom();
     map.on("resize", lockMinZoom);
-    map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: "Batas provinsi 2017 © OpenStreetMap contributors (ODbL) via geoBoundaries" }));
+    map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: "Batas 38 provinsi: denyherianto/indonesia-geojson-topojson-maps-with-38-provinces (CC BY 4.0)" }));
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
     const byCode = new Map(provinces.map((p) => [p.code, p]));
 

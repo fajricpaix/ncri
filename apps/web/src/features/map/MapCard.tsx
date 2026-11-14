@@ -18,7 +18,7 @@ export function MapCard({ provinces, selected, level, height = 380 }: { province
     <div className="space-y-3">
       <RiskMap provinces={provinces} selected={selected} levelFilter={level} onSelect={pick} height={height} />
       <Legend />
-      <p className="text-xs text-slate-500">Warna = skor rata-rata objek yang dinilai di provinsi itu (bisa menyembunyikan satu objek berisiko tinggi). Batas provinsi 2017: pemekaran Papua digambar sebagai induknya. Klik provinsi lagi untuk melepas filter.</p>
+      <p className="text-xs text-slate-500">Warna = skor rata-rata objek yang dinilai di provinsi itu (bisa menyembunyikan satu objek berisiko tinggi). Klik provinsi lagi untuk melepas filter.</p>
     </div>
   );
 }

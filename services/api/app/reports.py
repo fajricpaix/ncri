@@ -15,8 +15,6 @@ from app.risk import METHOD_VERSION, PARAMS, classify
 router = APIRouter(dependencies=[Depends(auth.current_user)])
 DB = Depends(get_db)
 
-# Batas peta = 2017 (34 provinsi). Provinsi hasil pemekaran 2022 digambar oleh induknya.
-MAP_PARENT = {"93": "91", "94": "91", "95": "91", "96": "92"}
 CAVEATS = [
     "Skor risiko memakai metodologi baseline demo yang belum divalidasi ahli (lihat docs/risk-methodology.md).",
     "Skor risiko dan data confidence adalah dua ukuran berbeda; confidence rendah berarti bukti pendukung lemah.",
@@ -66,21 +64,17 @@ def _tally(rows):
 
 @router.get("/map/provinces")
 def map_provinces(db: Session = DB):
-    """Ringkasan per provinsi untuk peta. Provinsi pemekaran digabung ke induk peta (lihat MAP_PARENT)."""
+    """Ringkasan per provinsi (38) untuk peta."""
     names = {r.code: r.name for r in db.scalars(select(m.Region).where(m.Region.level == m.RegionLevel.PROVINCE))}
     by_code: dict[str, list] = {}
     for r in _rows(db):
         if r["province_code"]:
-            by_code.setdefault(MAP_PARENT.get(r["province_code"], r["province_code"]), []).append(r)
+            by_code.setdefault(r["province_code"], []).append(r)
     out = []
     for code, name in sorted(names.items()):
-        if code in MAP_PARENT:
-            continue  # tidak punya poligon sendiri
         rows = by_code.get(code, [])
-        merged = sorted(c for c, p in MAP_PARENT.items() if p == code)
         out.append({"code": code, "name": name, "n_objects": len(rows), **_tally(rows),
                     "level": _tally(rows)["level"] if rows else "NO_DATA",
-                    "merged_note": (f"Termasuk provinsi pemekaran: {', '.join(names[c] for c in merged)}" if merged else None),
                     "objects": [{k: r[k] for k in ("id", "name", "category", "score", "level", "confidence")}
                                 for r in sorted(rows, key=lambda r: -(r["score"] or -1))]})
     return out

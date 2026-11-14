@@ -1,4 +1,4 @@
-from app.reports import MAP_PARENT, _safe, _tally
+from app.reports import _safe, _tally
 
 
 def test_csv_injection_is_neutralised_but_numbers_untouched():
@@ -15,6 +15,3 @@ def test_tally_levels_and_insufficient():
     assert t["avg_score"] == 55.0 and t["level"] == "MEDIUM" and t["assessed"] == 2
     assert _tally([{"level": "INSUFFICIENT_DATA", "score": None, "confidence": None}])["level"] == "INSUFFICIENT_DATA"
 
-
-def test_pemekaran_rolled_into_parent_for_2017_boundaries():
-    assert MAP_PARENT == {"93": "91", "94": "91", "95": "91", "96": "92"}
