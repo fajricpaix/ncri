@@ -42,7 +42,7 @@ export function AiDiscovery() {
   const [confirmNat, setConfirmNat] = useState(false);
   const stop = useRef(false);
 
-  /** Satu klik = satu pencarian per provinsi, berurutan (hormati rate limit & kuota). Berhenti bila 3 galat beruntun. */
+  /** Satu klik = satu pencarian per provinsi, berurutan (hormati rate limit & kuota). Berhenti bila 3 error beruntun. */
   async function searchNational() {
     setConfirmNat(false); setMsg(null); setDropped([]); stop.current = false; setBusy("national");
     const st = { done: 0, total: regions.length, created: 0, failed: 0, dropped: 0, empty: 0 };
@@ -63,7 +63,7 @@ export function AiDiscovery() {
       await load();
     }
     const halted = streak >= 3;
-    setMsg({ ok: !halted, text: `${stop.current ? "Dihentikan" : halted ? `Berhenti (3 galat beruntun: ${lastErr})` : "Selesai"}: ${st.done}/${st.total} provinsi, ${st.created} kandidat masuk antrean verifikasi, ${st.dropped} ditolak otomatis, ${st.empty} provinsi tanpa hasil bersumber, ${st.failed} galat.` });
+    setMsg({ ok: !halted, text: `${stop.current ? "Dihentikan" : halted ? `Berhenti (3 error beruntun: ${lastErr})` : "Selesai"}: ${st.done}/${st.total} provinsi, ${st.created} kandidat masuk antrean verifikasi, ${st.dropped} ditolak otomatis, ${st.empty} provinsi tanpa hasil bersumber, ${st.failed} error.` });
     setNat(null); setBusy(null);
   }
 
