@@ -90,3 +90,8 @@ h1, h2, h3, h4, th, label, legend, summary, button, .cap { text-transform: capit
   .l-blob { animation: login-blob 14s ease-in-out infinite; }
   .l-btn-shine::after { content: ""; position: absolute; inset: 0; width: 40%; background: linear-gradient(90deg, transparent, rgb(255 255 255 / .6), transparent); animation: login-sweep 3.5s ease-in-out infinite; }
 }
+
+/* Mobile: 16px mencegah iOS zoom otomatis saat fokus; target sentuh lebih besar */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), textarea, button[role="combobox"] { font-size: 16px; min-height: 44px; }
+}

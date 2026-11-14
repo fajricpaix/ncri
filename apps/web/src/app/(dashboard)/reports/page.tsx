@@ -5,6 +5,7 @@ import { PrintButton } from "@/features/reports/PrintButton";
 import { api } from "@/lib/api-server";
 import { API } from "@/lib/api-client";
 import type { ExecutiveReport, Region } from "@/types/api";
+import { Select } from "@/components/ui/Select";
 
 const f = (n: number | null, d = 0) => (n === null ? "—" : n.toFixed(d).replace(".", ","));
 
@@ -24,10 +25,10 @@ async function Report({ searchParams }: { searchParams: PageProps<"/reports">["s
         <form method="get" className="flex items-end gap-2">
           <label className="text-sm font-medium">
             Cakupan
-            <select name="province" defaultValue={province} className="mt-1 block rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            <Select name="province" defaultValue={province} className="mt-1 min-w-48">
               <option value="">Nasional</option>
               {regions.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}
-            </select>
+            </Select>
           </label>
           <button className="btn-gold px-3 py-2 text-sm font-semibold text-navy">Terapkan</button>
         </form>

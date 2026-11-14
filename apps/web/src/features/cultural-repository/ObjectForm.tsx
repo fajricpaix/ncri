@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import type { CulturalObject, DataSource, Region } from "@/types/api";
+import { Select } from "@/components/ui/Select";
 
-const input = "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-2 focus:outline-gold";
+const input = "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-slate-400 hover:border-slate-400 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold";
 const label = "block text-sm font-medium";
 
 /** Tambah (tanpa `initial`) atau edit objek budaya. Asal data hanya dipilih saat tambah: tidak bisa diubah setelahnya. */
@@ -59,10 +60,10 @@ export function ObjectForm({ initial, provinces, sources }: { initial?: Cultural
           <input name="external_code" maxLength={100} defaultValue={initial?.external_code ?? ""} placeholder="opsional, harus unik" className={input} />
         </label>
         <label className={label}>Provinsi
-          <select name="region_id" defaultValue={initial?.region_id ?? ""} className={input}>
+          <Select name="region_id" defaultValue={String(initial?.region_id ?? "")} className="mt-1 w-full">
             <option value="">—</option>
             {provinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          </Select>
         </label>
         <label className={label}>Latitude
           <input name="latitude" type="number" step="any" min={-90} max={90} defaultValue={initial?.latitude ?? ""} className={input} />
@@ -71,10 +72,10 @@ export function ObjectForm({ initial, provinces, sources }: { initial?: Cultural
           <input name="longitude" type="number" step="any" min={-180} max={180} defaultValue={initial?.longitude ?? ""} className={input} />
         </label>
         <label className={label}>Sumber data
-          <select name="source_id" defaultValue={initial?.source_id ?? ""} className={input}>
+          <Select name="source_id" defaultValue={String(initial?.source_id ?? "")} className="mt-1 w-full">
             <option value="">—</option>
             {sources.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+          </Select>
         </label>
         {initial ? (
           <div className={label}>Asal data
@@ -82,11 +83,11 @@ export function ObjectForm({ initial, provinces, sources }: { initial?: Cultural
           </div>
         ) : (
           <label className={label}>Asal data *
-            <select name="data_origin" required defaultValue="" className={input}>
+            <Select name="data_origin" required defaultValue="" className="mt-1 w-full">
               <option value="" disabled>Pilih asal data…</option>
               <option value="PUBLIC">PUBLIC (dataset publik)</option>
               <option value="PARTNER">PARTNER (mitra/instansi)</option>
-            </select>
+            </Select>
           </label>
         )}
       </div>

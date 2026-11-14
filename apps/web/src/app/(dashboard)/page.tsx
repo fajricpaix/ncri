@@ -29,14 +29,30 @@ async function Content() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="text-sm text-slate-600">{d.assessed_objects} dari {d.total_objects} objek memiliki data cukup untuk dinilai</span>
-        <span className="ml-auto"><RunRiskButton /></span>
-        <p className="w-full text-xs text-slate-500">
-          Sumber: {d.sources.join(", ") || "—"} · penilaian s.d. {d.latest_period_end ?? "—"} · metode {d.method_version} ·{" "}
-          {quality.map(([l, v]) => `${l} ${pct(v)}`).join(" · ")} · Data confidence {d.avg_confidence?.toFixed(2).replace(".", ",") ?? "—"}
-        </p>
-      </div>
+      <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div className="min-w-56 flex-1">
+            <p className="text-sm font-semibold text-navy">
+              {d.assessed_objects} <span className="font-normal text-slate-500">dari {d.total_objects} objek siap dinilai</span>
+            </p>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full rounded-full bg-gold" style={{ width: `${d.total_objects ? (d.assessed_objects / d.total_objects) * 100 : 0}%` }} />
+            </div>
+          </div>
+          <RunRiskButton />
+        </div>
+        <dl className="raw mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-slate-100 pt-4 text-xs sm:grid-cols-3 lg:grid-cols-6">
+          {([
+            ["Penilaian s.d.", d.latest_period_end ?? "—"],
+            ["Metode", d.method_version],
+            ...quality.map(([l, v]) => [l, pct(v)] as const),
+            ["Data Confidence", d.avg_confidence?.toFixed(2).replace(".", ",") ?? "—"],
+          ] as const).map(([l, v]) => (
+            <div key={l}><dt className="cap text-slate-500">{l}</dt><dd className="mt-0.5 text-sm font-semibold text-navy">{v}</dd></div>
+          ))}
+        </dl>
+        <p className="raw mt-3 text-xs text-slate-500"><span className="cap font-semibold">Sumber:</span> {d.sources.join(", ") || "—"}</p>
+      </section>
 
       {d.assessed_objects === 0 && (
         <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-200">

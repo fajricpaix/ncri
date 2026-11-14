@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Filter, RotateCcw } from "lucide-react";
+import { Select } from "@/components/ui/Select";
 
 type Opt = [value: string, label: string];
-const sel = "raw mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-navy outline-none focus:ring-2 focus:ring-gold";
 
 // Form GET biasa: tanpa JS, filter hidup di URL (bisa dibagikan).
 export function FilterBar({ action, categories, provinces, levels, values }: { action: string; categories: Opt[]; provinces: Opt[]; levels: Opt[]; values: Record<string, string> }) {
@@ -16,10 +16,10 @@ export function FilterBar({ action, categories, provinces, levels, values }: { a
       {fields.map(([name, label, opts, all]) => (
         <label key={name} className="text-xs font-semibold text-navy">
           {label}
-          <select name={name} defaultValue={values[name] ?? ""} className={sel}>
+          <Select name={name} defaultValue={values[name] ?? ""} className="mt-1 w-full">
             <option value="">{all}</option>
             {opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
+          </Select>
         </label>
       ))}
       <div className="flex items-end gap-2">

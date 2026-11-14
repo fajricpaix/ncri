@@ -20,7 +20,7 @@ export async function Focus({ id, province, wide = false }: { id: string; provin
   // Fragment: 2 item grid (panel objek, faktor). Induk menaruhnya di grid 4 kolom.
   return (
     <>
-      <div className={`flex flex-col gap-4 ${wide ? "xl:col-span-4" : ""}`}>
+      <div className={`flex flex-col gap-4 ${wide ? "xl:col-span-4 xl:grid xl:grid-cols-2 xl:items-start" : ""}`}>
       <Card bodyClassName="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="raw text-xl font-bold text-navy">{obj.name}</h3>
@@ -35,12 +35,7 @@ export async function Focus({ id, province, wide = false }: { id: string; provin
           <div className="flex items-center justify-between gap-2 rounded-xl bg-green-50 px-3 py-2" title="Terpisah dari skor risiko"><p className="cap text-xs text-slate-600">Data Confidence</p><p className="text-2xl font-bold text-risk-low">{risk.data_confidence?.toFixed(2).replace(".", ",") ?? "—"}</p></div>
         </div>
       </Card>
-      <Card title="Insight & Rekomendasi AI" icon={Sparkles} className="flex-1">
-        <p className="text-sm text-slate-700">{insight ? insight.output.summary : "Belum ada analisis AI untuk objek ini."}</p>
-        <Link href={`/cultural-repository/${id}`} className="cap mt-3 inline-block btn-gold px-3 py-1.5 text-sm font-semibold text-navy">Lihat Rekomendasi Lengkap</Link>
-      </Card>
-      </div>
-        <Card title="Faktor Penggerak Risiko" className={wide ? "xl:col-span-4" : ""} bodyClassName="flex flex-col gap-2">
+        <Card title="Faktor Penggerak Risiko" bodyClassName="flex flex-col gap-2">
           {factors.length === 0 ? <p className="text-sm text-slate-600">Data belum cukup untuk menilai.</p> : factors.map((f) => {
             const pct = Math.round((f.contribution / total) * 100);
             return (
@@ -56,6 +51,11 @@ export async function Focus({ id, province, wide = false }: { id: string; provin
           })}
           <p className="text-xs text-slate-500">Persen hitam = porsi pada skor baseline; chip merah = perubahan dari periode sebelumnya.</p>
         </Card>
+      </div>
+      <Card title="Insight & Rekomendasi AI" icon={Sparkles} className="xl:col-span-4">
+        <p className="max-w-4xl text-sm leading-relaxed text-slate-700">{insight ? insight.output.summary : "Belum ada analisis AI untuk objek ini."}</p>
+        <Link href={`/cultural-repository/${id}`} className="cap mt-3 inline-block btn-gold px-3 py-1.5 text-sm font-semibold text-navy">Lihat Rekomendasi Lengkap</Link>
+      </Card>
     </>
   );
 }

@@ -3,16 +3,20 @@ import { ChevronRight, MapPin, Layers, ShieldCheck, Sparkles } from "lucide-reac
 import { ObjectThumb } from "@/features/ai-predictive-risk-engine/ObjectThumb";
 import { Card } from "@/components/ui/Card";
 import { RiskBadge } from "@/components/ui/RiskBadge";
-import { api } from "@/lib/api-server";
+import { api, serverFetch } from "@/lib/api-server";
 import type { Analysis, CulturalObject, Risk } from "@/types/api";
 
 
 export async function ObjectDetail({ id, province }: { id: string; province: string }) {
-  const [obj, risk, analyses] = await Promise.all([
+  const [obj, riskRes, analyses] = await Promise.all([
     api<CulturalObject>(`/cultural-objects/${id}`),
-    api<Risk>(`/cultural-objects/${id}/risk`),
+    serverFetch(`/cultural-objects/${id}/risk`),
     api<Analysis[]>(`/cultural-objects/${id}/analyses`),
   ]);
+  // 404 = objek belum pernah dinilai (belum Hitung Ulang Risiko), bukan error.
+  if (riskRes.status === 404) return <Card title="Detail Penilaian Risiko"><p className="raw text-sm text-slate-600">{obj.name} belum punya penilaian risiko. Jalankan Hitung Ulang Risiko lebih dulu.</p></Card>;
+  if (!riskRes.ok) throw new Error(`API ${riskRes.status} /cultural-objects/${id}/risk`);
+  const risk: Risk = await riskRes.json();
   const score = risk.risk_score;
   const insight = analyses.find((a) => a.analysis_type === "RISK_EXPLANATION") ?? analyses[0];
   // Komposisi = kontribusi tiap faktor ke skor, diurutkan terbesar.
