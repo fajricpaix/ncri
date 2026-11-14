@@ -91,3 +91,8 @@ export type Answer = {
   id: string; question: string; scope: string; answer: string; answerable: boolean;
   evidence_refs: string[]; limitations: string[]; provider: string; model: string;
 };
+export type AiSubmission = {
+  id: string; batch_id: string; kind: "OBJECT" | "OBSERVATION"; payload: Record<string, string | number | null>;
+  evidence_text: string; sources: { url: string; title: string }[]; query: string; provider: string; model: string;
+  status: "PENDING" | "APPROVED" | "REJECTED"; created_at: string; review_note: string | null;
+};

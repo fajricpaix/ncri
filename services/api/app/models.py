@@ -326,3 +326,35 @@ class AppSetting(Base):
     key: Mapped[str] = mapped_column(String, primary_key=True)
     value: Mapped[str] = mapped_column(Text)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class SubmissionKind(str, enum.Enum):
+    OBJECT = "OBJECT"
+    OBSERVATION = "OBSERVATION"
+
+
+class SubmissionStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
+
+class AiSubmission(Base):
+    """Kandidat data hasil pencarian AI. Staging: TIDAK dihitung di dashboard sampai disetujui reviewer."""
+    __tablename__ = "ai_submissions"
+    id: Mapped[uuid.UUID] = _pk()
+    batch_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    kind: Mapped[SubmissionKind] = mapped_column(Enum(SubmissionKind))
+    payload: Mapped[dict] = mapped_column(JSONB)
+    evidence_text: Mapped[str] = mapped_column(Text)  # kalimat dari hasil pencarian yang menjadi dasar item
+    sources: Mapped[list] = mapped_column(JSONB)  # [{url, title}] dari sitasi penyedia, bukan tulisan model
+    query: Mapped[str] = mapped_column(Text)
+    provider: Mapped[str] = mapped_column(String)
+    model: Mapped[str] = mapped_column(String)
+    status: Mapped[SubmissionStatus] = mapped_column(Enum(SubmissionStatus), default=SubmissionStatus.PENDING, index=True)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_note: Mapped[str | None] = mapped_column(Text)
+    result_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))  # id objek/observasi yang dibuat saat disetujui
+    created_at: Mapped[datetime] = _ts()

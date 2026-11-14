@@ -14,8 +14,28 @@ class LLMProvider(Protocol):
     name: str
     model: str
 
+    async def search(self, system_prompt: str, query: str) -> list[dict[str, Any]]:
+        """Pencarian web. Return segmen berbukti: [{"text", "sources": [{"url", "title"}]}]. Tanpa sumber = tidak dikembalikan."""
+        ...
+
     async def generate_structured(self, system_prompt: str, user_payload: dict[str, Any],
                                   response_schema: dict[str, Any]) -> dict[str, Any]: ...
+
+
+async def _post(self, url, body, headers, timeout=120.0):
+    """POST untuk pencarian web (lebih lambat dari generate biasa)."""
+    try:
+        if self._client:
+            r = await self._client.post(url, json=body, headers=headers)
+        else:
+            async with httpx.AsyncClient(timeout=max(self.timeout, timeout)) as c:
+                r = await c.post(url, json=body, headers=headers)
+        r.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        raise LLMError(f"provider error: HTTP {e.response.status_code}" + (" (kuota/rate limit habis, coba lagi nanti)" if e.response.status_code == 429 else "")) from e
+    except httpx.HTTPError as e:
+        raise LLMError(f"provider error: {type(e).__name__}") from e
+    return r.json()
 
 
 class AnthropicProvider:
@@ -48,6 +68,24 @@ class AnthropicProvider:
             if block.get("type") == "tool_use":
                 return block["input"]
         raise LLMError("provider tidak mengembalikan output terstruktur")
+
+
+async def _anthropic_search(self, system_prompt, query):
+    body = {"model": self.model, "max_tokens": 4000, "system": system_prompt,
+            "messages": [{"role": "user", "content": query}],
+            "tools": [{"type": "web_search_20250305", "name": "web_search", "max_uses": 5}]}
+    headers = {"x-api-key": self.api_key, "anthropic-version": "2023-06-01", "content-type": "application/json"}
+    data = await _post(self, self.URL, body, headers)
+    segs = []
+    for b in data.get("content", []):  # sumber hanya dari sitasi yang dikembalikan penyedia, bukan dari teks model
+        if b.get("type") == "text" and b.get("citations"):
+            srcs = [{"url": c["url"], "title": c.get("title") or ""} for c in b["citations"] if c.get("url")]
+            if srcs and b.get("text", "").strip():
+                segs.append({"text": b["text"], "sources": srcs})
+    return segs
+
+
+AnthropicProvider.search = _anthropic_search
 
 
 class GeminiProvider:
@@ -84,6 +122,32 @@ class GeminiProvider:
             raise LLMError("provider tidak mengembalikan JSON terstruktur") from e
 
 
+async def _gemini_search(self, system_prompt, query):
+    body = {"systemInstruction": {"parts": [{"text": system_prompt}]},
+            "contents": [{"role": "user", "parts": [{"text": query}]}],
+            "tools": [{"google_search": {}}],
+            "generationConfig": {"temperature": 0.2, "maxOutputTokens": 8192}}
+    headers = {"x-goog-api-key": self.api_key, "content-type": "application/json"}
+    data = await _post(self, self.URL.format(model=self.model), body, headers)
+    try:
+        gm = data["candidates"][0].get("groundingMetadata") or {}
+    except (KeyError, IndexError, TypeError) as e:
+        raise LLMError("provider tidak mengembalikan hasil pencarian") from e
+    # ponytail: uri = tautan redirect Google (valid, bisa diklik); title = domain. Resolusi ke URL asli bila reviewer butuh.
+    chunks = [(c.get("web") or {}) for c in gm.get("groundingChunks", [])]
+    segs = []
+    for sp in gm.get("groundingSupports", []):
+        srcs = [{"url": chunks[i]["uri"], "title": chunks[i].get("title") or ""}
+                for i in sp.get("groundingChunkIndices", []) if i < len(chunks) and chunks[i].get("uri")]
+        text = (sp.get("segment") or {}).get("text", "")
+        if srcs and text.strip():
+            segs.append({"text": text, "sources": srcs})
+    return segs
+
+
+GeminiProvider.search = _gemini_search
+
+
 class FakeProvider:
     """Keluaran deterministik dari payload, tanpa jaringan. HANYA untuk dev/tes; bukan analisis AI."""
     name = "fake"
@@ -110,6 +174,13 @@ class FakeProvider:
             limits.append(f"Data confidence rendah ({a['data_confidence']}).")
         return {"summary": f"{self.TAG}Skor risiko {a['risk_score']:.0f}/100 ({a['risk_level']}) untuk {user_payload['object']['name']}.",
                 "risk_drivers": drivers, "root_cause_hypotheses": hyps, "recommended_actions": actions, "limitations": limits}
+
+
+async def _fake_search(self, system_prompt, query):
+    raise LLMError("pencarian web butuh provider gemini atau anthropic (Settings > Pengaturan LLM); 'fake' tidak mengarang data")
+
+
+FakeProvider.search = _fake_search
 
 
 def _fake_assistant(self, p):
