@@ -23,7 +23,7 @@ class LLMProvider(Protocol):
 
 
 def _status_error(e: httpx.HTTPStatusError) -> LLMError:
-    """Pesan galat + teks asli dari penyedia (error.message). Tidak memuat kunci API."""
+    """Pesan error + teks asli dari penyedia (error.message). Tidak memuat kunci API."""
     code, detail = e.response.status_code, ""
     try:
         err = e.response.json().get("error")
@@ -60,11 +60,12 @@ class AnthropicProvider:
 
     async def generate_structured(self, system_prompt, user_payload, response_schema):
         body = {
-            "model": self.model, "max_tokens": 4000, "system": system_prompt,
+            "model": self.model, "max_tokens": 4000,
+            "system": system_prompt + "\n\nWajib menjawab HANYA dengan memanggil tool submit_analysis (tanpa teks lain).",
             "messages": [{"role": "user", "content": json.dumps(user_payload, ensure_ascii=False, default=str)}],
             "tools": [{"name": "submit_analysis", "description": "Kirim hasil analisis terstruktur",
                        "input_schema": response_schema}],
-            "tool_choice": {"type": "tool", "name": "submit_analysis"},
+            "tool_choice": {"type": "auto"},  # model baru menolak type "tool"/"any"; wajib-tool lewat instruksi di system
         }
         headers = {"x-api-key": self.api_key, "anthropic-version": "2023-06-01", "content-type": "application/json"}
         try:

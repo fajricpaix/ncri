@@ -70,7 +70,7 @@ def validate_rows(rows, objects: set[str], indicators: set[str], sources: set[st
 
 
 def _check(rows, required, optional, rules):
-    """rules = {field: fungsi(nilai) -> pesan galat | None}. required[0] = kunci unik: kode dobel di file ditolak."""
+    """rules = {field: fungsi(nilai) -> pesan error | None}. required[0] = kunci unik: kode dobel di file ditolak."""
     valid, errors, seen = [], [], set()
     for i, r in enumerate(rows, start=2):
         errs = [{"row": i, "field": f, "message": "wajib diisi"} for f in required if not (r.get(f) or "").strip()]

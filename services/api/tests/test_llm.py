@@ -63,8 +63,8 @@ def test_anthropic_provider_sends_tool_schema_and_parses_tool_use():
 
     got = asyncio.run(_anthropic(handler).generate_structured("sys", {"a": 1}, {"type": "object"}))
     assert got == {"summary": "ok"}
-    assert seen["h"]["x-api-key"] == "k" and seen["b"]["tool_choice"]["name"] == "submit_analysis"
-    assert seen["b"]["system"] == "sys" and seen["b"]["model"] == "claude-sonnet-5-5"
+    assert seen["h"]["x-api-key"] == "k" and seen["b"]["tool_choice"] == {"type": "auto"} and "submit_analysis" in seen["b"]["system"]
+    assert seen["b"]["system"].startswith("sys") and seen["b"]["model"] == "claude-sonnet-5-5"
 
 
 def test_anthropic_provider_errors_do_not_leak_key():
