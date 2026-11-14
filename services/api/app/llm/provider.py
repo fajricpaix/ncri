@@ -22,6 +22,18 @@ class LLMProvider(Protocol):
                                   response_schema: dict[str, Any]) -> dict[str, Any]: ...
 
 
+def _status_error(e: httpx.HTTPStatusError) -> LLMError:
+    """Pesan galat + teks asli dari penyedia (error.message). Tidak memuat kunci API."""
+    code, detail = e.response.status_code, ""
+    try:
+        err = e.response.json().get("error")
+        detail = (err.get("message") if isinstance(err, dict) else str(err or ""))[:300]
+    except Exception:
+        pass
+    hint = " (kuota/rate limit habis, coba lagi nanti)" if code == 429 else ""
+    return LLMError(f"provider error: HTTP {code}{hint}" + (f": {detail}" if detail else ""))
+
+
 async def _post(self, url, body, headers, timeout=120.0):
     """POST untuk pencarian web (lebih lambat dari generate biasa)."""
     try:
@@ -32,7 +44,7 @@ async def _post(self, url, body, headers, timeout=120.0):
                 r = await c.post(url, json=body, headers=headers)
         r.raise_for_status()
     except httpx.HTTPStatusError as e:
-        raise LLMError(f"provider error: HTTP {e.response.status_code}" + (" (kuota/rate limit habis, coba lagi nanti)" if e.response.status_code == 429 else "")) from e
+        raise _status_error(e) from e
     except httpx.HTTPError as e:
         raise LLMError(f"provider error: {type(e).__name__}") from e
     return r.json()
@@ -62,6 +74,8 @@ class AnthropicProvider:
                 async with httpx.AsyncClient(timeout=self.timeout) as c:
                     r = await c.post(self.URL, json=body, headers=headers)
             r.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise _status_error(e) from e
         except httpx.HTTPError as e:
             raise LLMError(f"provider error: {type(e).__name__}") from e
         for block in r.json().get("content", []):
@@ -113,7 +127,7 @@ class GeminiProvider:
                     r = await c.post(self.URL.format(model=self.model), json=body, headers=headers)
             r.raise_for_status()
         except httpx.HTTPStatusError as e:
-            raise LLMError(f"provider error: HTTP {e.response.status_code}" + (" (kuota/rate limit gratis habis, coba lagi nanti)" if e.response.status_code == 429 else "")) from e
+            raise _status_error(e) from e
         except httpx.HTTPError as e:
             raise LLMError(f"provider error: {type(e).__name__}") from e
         try:

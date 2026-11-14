@@ -99,3 +99,10 @@ def test_non_http_source_urls_are_dropped():
             {"text": "b", "sources": [{"url": "javascript:x", "title": ""}, {"url": "https://ok.id", "title": "ok"}]}]
     ev = build_evidence(segs)
     assert [(e["id"], e["sources"]) for e in ev] == [("e1", [{"url": "https://ok.id", "title": "ok"}])]
+
+
+def test_provider_error_shows_upstream_message():
+    body = {"error": {"type": "invalid_request_error", "message": "tools.0: schema tidak valid"}}
+    with pytest.raises(LLMError, match="HTTP 400: tools.0: schema tidak valid"):
+        asyncio.run(AnthropicProvider("k", "m", client=_client(lambda r: httpx.Response(400, json=body)))
+                    .generate_structured("s", {}, {}))
