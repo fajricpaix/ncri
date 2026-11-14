@@ -59,12 +59,15 @@ export type Recommendation = {
   id: string; cultural_object_id: string; object_name: string; title: string; problem_statement: string;
   root_cause_hypotheses: LlmOutput["root_cause_hypotheses"]; recommended_actions: LlmOutput["recommended_actions"];
   target_groups: string[]; suggested_kpis: string[]; status: string; provider: string | null;
+  risk_level: RiskLevelName | null; risk_score: number | null;
+  evidence: { indicator: string; unit: string | null; value: number | string | null; period_end: string; data_origin: Origin;
+    verification: string; source_code: string; source_name: string; source_url: string | null }[];
 };
 
 export type MapLevel = RiskLevelName | "NO_DATA";
 export type ProvinceSummary = {
   code: string; name: string; n_objects: number; assessed: number; avg_score: number | null;
-  avg_confidence: number | null; level: MapLevel; merged_note: string | null;
+  avg_confidence: number | null; level: MapLevel;
   distribution: Record<RiskLevelName, number>;
   objects: { id: string; name: string; category: string; score: number | null; level: RiskLevelName; confidence: number | null }[];
 };

@@ -51,6 +51,29 @@ class RecommendationOut(BaseModel):
     suggested_kpis: list
     status: str
     provider: str | None
+    risk_level: str | None = None
+    risk_score: float | None = None
+    evidence: list[dict] = []   # observasi yang dirujuk + sumbernya
+
+
+def _evidence(db: Session, refs: list) -> list[dict]:
+    ids = []
+    for r in refs:
+        try:
+            ids.append(uuid.UUID(str(r)))
+        except ValueError:
+            pass  # ref non-observasi (mis. kode objek)
+    if not ids:
+        return []
+    q = (select(m.IndicatorObservation, m.Indicator, m.DataSource)
+         .join(m.Indicator, m.Indicator.id == m.IndicatorObservation.indicator_id)
+         .join(m.DataSource, m.DataSource.id == m.IndicatorObservation.source_id)
+         .where(m.IndicatorObservation.id.in_(ids)))
+    return [{"indicator": i.name, "unit": i.unit,
+             "value": float(o.value_numeric) if o.value_numeric is not None else o.value_text,
+             "period_end": o.period_end.isoformat(), "data_origin": o.data_origin.value,
+             "verification": o.verification_status.value, "source_code": s.code, "source_name": s.name,
+             "source_url": s.terms_url} for o, i, s in db.execute(q)]
 
 
 def _analysis_out(a: m.LlmAnalysis) -> AnalysisOut:
@@ -116,7 +139,11 @@ def list_recommendations(db: Session = DB):
     out = []
     for r in db.scalars(select(m.PolicyRecommendation).order_by(m.PolicyRecommendation.created_at.desc())):
         an = db.get(m.LlmAnalysis, r.llm_analysis_id) if r.llm_analysis_id else None
+        ra = db.get(m.RiskAssessment, r.risk_assessment_id) if r.risk_assessment_id else None
         out.append(RecommendationOut(
+            risk_level=ra.risk_level.value if ra else None,
+            risk_score=float(ra.risk_score) if ra and ra.risk_score is not None else None,
+            evidence=_evidence(db, r.evidence_refs),
             id=r.id, cultural_object_id=r.cultural_object_id, object_name=r.cultural_object.name, title=r.title,
             problem_statement=r.problem_statement, root_cause_hypotheses=r.root_cause_hypotheses,
             recommended_actions=r.recommended_actions, target_groups=r.target_groups,
