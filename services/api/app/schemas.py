@@ -157,3 +157,7 @@ class WarningOut(BaseModel):
 
 class WarningPatch(BaseModel):
     status: m.WarningStatus
+
+
+class ResetIn(BaseModel):
+    confirm: str

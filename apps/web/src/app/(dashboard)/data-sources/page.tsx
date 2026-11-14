@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { Card } from "@/components/ui/Card";
 import { AiDiscovery } from "@/features/data-sources/AiDiscovery";
+import { ResetData } from "@/features/data-sources/ResetData";
 import { CsvImport } from "@/features/data-sources/CsvImport";
 import { api } from "@/lib/api-server";
 import type { DataSource } from "@/types/api";
@@ -33,11 +34,14 @@ export default function DataSources() {
       <Card title="Sumber Data" className="overflow-x-auto">
         <Suspense fallback={<PageLoader label="Memuat…" />}><Sources /></Suspense>
       </Card>
+      <Card title="Import Data (CSV)">
+        <CsvImport />
+      </Card>
       <Card title="Cari Data Dengan AI">
         <AiDiscovery />
       </Card>
-      <Card title="Import Data (CSV)">
-        <CsvImport />
+      <Card title="Kosongkan Data">
+        <ResetData />
       </Card>
     </div>
   );

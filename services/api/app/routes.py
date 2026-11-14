@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import PlainTextResponse
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -357,3 +357,21 @@ def prediction_run(user: m.User = auth.ANALYST, db: Session = DB):
         raise HTTPException(409, {"message": "Data historis belum cukup untuk prediksi tervalidasi; hanya tren deskriptif yang tersedia.",
                                   "reasons": st["reasons"]})
     raise HTTPException(501, "Gerbang lulus, tetapi belum ada model terdaftar (butuh keputusan ahli).")
+
+
+# Tabel data transaksi. TIDAK termasuk: regions, indicators, users, app_settings, audit_logs, login_failures.
+RESET_TABLES = ["policy_recommendations", "llm_analyses", "risk_assessment_factors", "early_warnings", "risk_assessments",
+                "indicator_observations", "ai_submissions", "data_import_jobs", "cultural_objects", "data_sources"]
+RESET_CONFIRM = "KOSONGKAN DATA"
+
+
+@router.post("/admin/reset-data")
+def reset_data(body: s.ResetIn, user: m.User = auth.ADMIN, db: Session = DB):
+    """Hapus semua data transaksi (objek, observasi, sumber, penilaian, warning, analisis AI, antrean) supaya bisa upload ulang."""
+    if body.confirm != RESET_CONFIRM:
+        raise HTTPException(422, f'ketik persis "{RESET_CONFIRM}" untuk konfirmasi')
+    counts = {t: db.execute(text(f"SELECT count(*) FROM {t}")).scalar_one() for t in RESET_TABLES}  # nama tabel dari konstanta
+    db.execute(text("TRUNCATE TABLE " + ", ".join(RESET_TABLES)))  # tanpa CASCADE: error bila ada tabel lain yang merujuk
+    auth.audit(db, user, "admin.reset_data", "system", None, {"deleted": counts})
+    db.commit()
+    return {"deleted": counts}
