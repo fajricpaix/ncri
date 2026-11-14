@@ -12,7 +12,8 @@ from app import schemas as s
 from app.config import settings
 from app.db import get_db
 from app import auth, risk_service
-from app.importer import REQUIRED, parse_csv, validate_rows
+from app.importer import (OBJECT_REQUIRED, REQUIRED, SOURCE_REQUIRED, parse_csv, validate_objects,
+                          validate_rows, validate_sources)
 from app.ml import readiness
 from app.risk import METHOD_VERSION
 
@@ -115,24 +116,36 @@ def object_indicators(id: uuid.UUID, db: Session = DB):
 
 
 @public.get("/data-imports/template.csv", response_class=PlainTextResponse)
-def template():
-    return ",".join(REQUIRED) + "\nOBJ-001,ACTIVE_PRACTITIONERS,2024-01-01,2024-12-31,45,SIM-01,SIMULATED\n"
+def template(kind: str = "observations"):
+    if kind not in ("observations", "objects", "sources"):
+        raise HTTPException(422, "kind harus observations, objects, atau sources")
+    if kind == "sources":
+        return "code,name,source_type,description,access_method,terms_url,license_notes\nSRC-01,Nama Sumber,GOVERNMENT,,,,\n"
+    if kind == "objects":
+        return ("external_code,name,category,description,region_code,latitude,longitude,inventory_status,source_code,data_origin\n"
+                "OBJ-001,Nama Objek,Kesenian,,32,,,,SRC-01,PARTNER\n")
+    return ",".join(REQUIRED) + "\nOBJ-001,ACTIVE_PRACTITIONERS,2024-01-01,2024-12-31,45,SRC-01,PARTNER\n"
 
 
 @router.post("/data-imports/csv", response_model=s.ImportReport)
-async def import_csv(file: UploadFile, commit: bool = False, user: m.User = auth.ANALYST, db: Session = DB):
+async def import_csv(file: UploadFile, commit: bool = False, kind: str = "observations", user: m.User = auth.ANALYST, db: Session = DB):
     """commit=false: hanya validasi + preview. commit=true: simpan baris valid."""
     if not (file.filename or "").lower().endswith(".csv"):
         raise HTTPException(415, "hanya file .csv")
     raw = await file.read(settings.max_upload_bytes + 1)
     if len(raw) > settings.max_upload_bytes:
         raise HTTPException(413, "file terlalu besar")
+    if kind not in ("observations", "objects", "sources"):
+        raise HTTPException(422, "kind harus observations, objects, atau sources")
     try:
-        rows, header_error = parse_csv(raw)
+        rows, header_error = parse_csv(raw, {"observations": REQUIRED, "objects": OBJECT_REQUIRED,
+                                             "sources": SOURCE_REQUIRED}[kind])
     except UnicodeDecodeError:
         raise HTTPException(400, "file harus UTF-8")
     if header_error:
         raise HTTPException(422, header_error)
+    if kind != "observations":
+        return _import_master(db, user, kind, file.filename, rows, commit)
 
     objects = {k: v for k, v in db.execute(select(m.CulturalObject.external_code, m.CulturalObject.id)) if k}
     inds = dict(db.execute(select(m.Indicator.code, m.Indicator.id)).all())
@@ -168,6 +181,43 @@ async def import_csv(file: UploadFile, commit: bool = False, user: m.User = auth
     return {**report, "committed": True, "job_id": job.id}
 
 
+def _import_master(db: Session, user: m.User, kind: str, filename: str | None, rows: list[dict], commit: bool):
+    """Impor sumber / objek budaya: upsert per kode (external_code / code), idempoten."""
+    if kind == "sources":
+        valid, errors = validate_sources(rows)
+    else:
+        regions = {r.code: r.id for r in db.scalars(select(m.Region))}
+        srcs = dict(db.execute(select(m.DataSource.code, m.DataSource.id)).all())
+        valid, errors = validate_objects(rows, set(regions), set(srcs))
+    failed = len({e["row"] for e in errors})
+    report = dict(committed=False, records_total=len(rows), records_valid=len(valid), records_failed=failed,
+                  errors=errors[:200], preview=[{k: str(v) for k, v in r.items() if v} for r in valid[:10]])
+    if not commit:
+        return report
+    for r in valid:
+        if kind == "sources":
+            vals = {**r, "source_type": m.SourceType(r["source_type"])}
+            key, model = "code", m.DataSource
+        else:
+            r = dict(r)
+            region, source = r.pop("region_code"), r.pop("source_code")
+            vals = {**r, "region_id": regions[region], "source_id": srcs.get(source),
+                    "data_origin": m.Origin(r["data_origin"]),
+                    "latitude": float(r["latitude"]) if r["latitude"] else None,
+                    "longitude": float(r["longitude"]) if r["longitude"] else None}
+            key, model = "external_code", m.CulturalObject
+        stmt = insert(model).values(**vals)
+        # sel kosong tidak menimpa data yang sudah ada; data_origin tidak pernah diubah lewat impor (sama seperti edit objek)
+        upd = {k: stmt.excluded[k] for k, v in vals.items() if k not in (key, "data_origin") and v is not None}
+        if kind == "objects":
+            upd["updated_at"] = func.now()
+        db.execute(stmt.on_conflict_do_update(index_elements=[key], set_=upd) if upd
+                   else stmt.on_conflict_do_nothing(index_elements=[key]))
+    auth.audit(db, user, f"import.{kind}", "data_import_job", None, {"file": filename, "success": len(valid), "failed": failed})
+    db.commit()
+    return {**report, "committed": True}
+
+
 @router.get("/data-imports/{id}")
 def import_status(id: uuid.UUID, db: Session = DB):
     job = db.get(m.DataImportJob, id)
@@ -198,7 +248,7 @@ def object_risk(id: uuid.UUID, db: Session = DB):
         cultural_object_id=id, assessment_date=a.assessment_date, period_start=a.period_start, period_end=a.period_end,
         risk_score=None if a.risk_score is None else float(a.risk_score), risk_level=a.risk_level.value,
         data_confidence=None if a.data_quality_score is None else float(a.data_quality_score),
-        method_version=a.method_version, is_simulated=a.is_simulated, confidence_components=ex["confidence_components"],
+        method_version=a.method_version, confidence_components=ex["confidence_components"],
         params=ex["params"],
         factors=[s.RiskFactorOut(indicator_code=f.indicator.code, indicator_name=f.indicator.name,
                                  normalized_risk=float(f.normalized_value), weight=float(f.weight_used),
@@ -268,7 +318,6 @@ def overview(db: Session = DB):
         "assessed_objects": total - dist["INSUFFICIENT_DATA"],
         "distribution": dist,
         "avg_confidence": round(sum(confs) / len(confs), 2) if confs else None,
-        "is_simulated": bool(origins.get(m.Origin.SIMULATED)) or any(a.is_simulated for a in latest),
         "data_origins": {k.value: v for k, v in origins.items()},
         "trend": [{"period_end": k, **v} for k, v in sorted(trend.items())],
         "open_warnings": warn,
@@ -277,7 +326,7 @@ def overview(db: Session = DB):
         "priority": [{"id": str(a.cultural_object_id), "name": objs[a.cultural_object_id].name,
                       "province": regions.get(objs[a.cultural_object_id].region_id),
                       "score": float(a.risk_score), "level": a.risk_level.value,
-                      "data_confidence": float(a.data_quality_score), "is_simulated": a.is_simulated} for a in ranked],
+                      "data_confidence": float(a.data_quality_score)} for a in ranked],
     }
 
 
@@ -285,16 +334,12 @@ def overview(db: Session = DB):
 
 def _prediction_status(db: Session) -> dict:
     series: dict[str, list] = {}
-    excluded = 0
     for a in db.scalars(select(m.RiskAssessment).where(m.RiskAssessment.method_version == METHOD_VERSION)):
-        if a.is_simulated:  # data simulasi TIDAK boleh dihitung sebagai bukti kesiapan prediksi
-            excluded += 1
-            continue
         series.setdefault(str(a.cultural_object_id), []).append(
             (a.period_end, None if a.risk_score is None else float(a.risk_score)))
     st = readiness.stats(series, settings.prediction_target_validated)
     # Belum ada model yang terdaftar => test_eval None => gerbang pasti menolak.
-    return {**readiness.gate(st, None), "stats": st, "excluded_simulated": excluded, "target": "Objek berstatus HIGH pada periode penilaian berikutnya (PROVISIONAL, belum disetujui ahli)",
+    return {**readiness.gate(st, None), "stats": st, "target": "Objek berstatus HIGH pada periode penilaian berikutnya (PROVISIONAL, belum disetujui ahli)",
             "baseline": "persistensi: status sekarang = status berikutnya"}
 
 

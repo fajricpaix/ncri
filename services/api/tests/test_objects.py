@@ -12,7 +12,7 @@ def test_update_is_partial():
 
 def test_update_cannot_change_provenance():
     with pytest.raises(ValidationError):
-        CulturalObjectUpdate(data_origin="PUBLIC")  # label SIMULATED tidak boleh diganti lewat edit
+        CulturalObjectUpdate(data_origin="PUBLIC")  # asal data tidak boleh diganti lewat edit
 
 
 @pytest.mark.parametrize("body", [{"name": None}, {"category": None}, {"name": ""}, {"latitude": 91}])

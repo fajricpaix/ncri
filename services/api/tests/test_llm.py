@@ -8,7 +8,7 @@ from app.llm.provider import AnthropicProvider, FakeProvider, LLMError
 from app.llm.schemas import LLMOutput
 
 PAYLOAD = {
-    "object": {"name": "Tari X", "data_origin": "SIMULATED"},
+    "object": {"name": "Tari X", "data_origin": "PARTNER"},
     "assessment": {"risk_score": 80.0, "risk_level": "HIGH", "data_confidence": 0.5, "factors": [
         {"indicator_name": "Pelaku", "change_pct": -40, "contribution": 20.0, "evidence_observation_ids": ["o1", "o2"]}]},
 }
@@ -79,7 +79,7 @@ from app.llm.schemas import AssistantOutput
 
 A_PAYLOAD = {"task": "assistant", "question": "objek apa paling berisiko?", "scope": {"type": "national", "name": "Nasional"},
              "objects": [{"ref": "assessment:o1", "name": "X", "score": 90.0, "level": "HIGH", "data_confidence": 0.5,
-                          "data_origin": "SIMULATED", "top_factors": []}]}
+                          "data_origin": "PARTNER", "top_factors": []}]}
 
 
 def ans(**kw):

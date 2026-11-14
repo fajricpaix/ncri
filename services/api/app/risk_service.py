@@ -16,8 +16,7 @@ def _load(db: Session, object_ids: list):
     for r in rows:
         by_obj[r.cultural_object_id].setdefault(str(r.indicator_id), []).append(
             Obs(str(r.id), r.period_start, r.period_end, None if r.value_numeric is None else float(r.value_numeric),
-                r.verification_status == m.Verification.VERIFIED, str(r.source_id), r.created_at,
-                r.data_origin == m.Origin.SIMULATED))
+                r.verification_status == m.Verification.VERIFIED, str(r.source_id), r.created_at))
     return inds, by_obj
 
 
@@ -42,7 +41,7 @@ def run(db: Session, object_id=None, user=None, only_ids=None) -> dict:
             row = m.RiskAssessment(
                 cultural_object_id=oid, assessment_date=today, period_start=a["period_start"], period_end=as_of,
                 risk_score=a["risk_score"], risk_level=m.RiskLevel(a["risk_level"]), method_version=METHOD_VERSION,
-                data_quality_score=a["data_confidence"], is_simulated=a["is_simulated"],
+                data_quality_score=a["data_confidence"],
                 explanation_json={k: a[k] for k in ("confidence_components", "params", "indicators_available", "indicators_expected")},
                 factors=[m.RiskAssessmentFactor(
                     indicator_id=f["indicator_id"], normalized_value=f["normalized_risk"], weight_used=f["weight"],

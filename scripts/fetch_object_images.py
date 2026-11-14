@@ -2,14 +2,12 @@
 Hasil: apps/web/public/objects/<slug>.jpg + manifest.json {nama: {file, page}}. Jalankan dari root: python scripts/fetch_object_images.py"""
 import json, re, sys, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
-sys.path.insert(0, "services/api")
-from app.sample_catalog import CATALOG
-from app.seed import OBJECTS
+import csv
 
 OUT = Path("apps/web/public/objects")
 OUT.mkdir(parents=True, exist_ok=True)
 UA = {"User-Agent": "ncri-dev-image-fetch/1.0"}
-names = [o[1] for o in OBJECTS] + [c[1] for c in CATALOG]
+names = [r["name"] for r in csv.DictReader(open("data/export/cultural_objects.csv", encoding="utf-8"))]
 slug = lambda n: re.sub(r"[^a-z0-9]+", "-", n.lower()).strip("-")
 
 def get(url):

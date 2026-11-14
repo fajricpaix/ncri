@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useContext } from "react";
-import { type Action, type User, can } from "./permissions";
+import { type Action, type User, can } from "@/lib/permissions";
 
 const Ctx = createContext<User | null>(null);
 export function UserProvider({ user, children }: { user: User; children: React.ReactNode }) {

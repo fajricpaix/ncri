@@ -92,7 +92,7 @@ export function GroupTable({ rows, by, label }: { rows: RepoRow[]; by: (r: RepoR
   );
 }
 
-const QUALITY_ICONS: LucideIcon[] = [ShieldAlert, Gauge, HelpCircle, FileWarning];
+const QUALITY_ICONS: LucideIcon[] = [ShieldAlert, Gauge, HelpCircle];
 
 // Objek yang datanya perlu dibenahi: belum terverifikasi, confidence < 0,5, atau belum dinilai.
 export function DataQuality({ rows }: { rows: RepoRow[] }) {
@@ -101,12 +101,11 @@ export function DataQuality({ rows }: { rows: RepoRow[] }) {
     ["Belum Terverifikasi", n((r) => r.verification_status !== "VERIFIED")],
     ["Confidence Rendah (<0,5)", n((r) => r.confidence !== null && r.confidence < 0.5)],
     ["Belum Dinilai", n((r) => r.level === "INSUFFICIENT_DATA")],
-    ["Data SIMULATED", n((r) => r.data_origin === "SIMULATED")],
   ];
   const issues = rows.filter((r) => r.verification_status !== "VERIFIED" || (r.confidence !== null && r.confidence < 0.5) || r.level === "INSUFFICIENT_DATA");
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {stats.map(([l, v], i) => <StatCard key={l} icon={QUALITY_ICONS[i] ?? FileWarning} tone={(["amber", "red", "slate", "purple"] as const)[i] ?? "blue"} label={l} value={v} />)}
       </div>
       <p className="text-sm text-slate-600">Objek yang perlu dibenahi datanya ({issues.length}):</p>

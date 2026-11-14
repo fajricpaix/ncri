@@ -1,10 +1,10 @@
 "use client";
-import { AnimatedLogo } from "./AnimatedLogo";
+import { AnimatedLogo } from "@/components/layout/AnimatedLogo";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCan } from "@/lib/user-context";
-import { NAV } from "./nav";
-import { SidebarArt } from "./SidebarArt";
+import { NAV } from "@/components/layout/nav";
+import { SidebarArt } from "@/components/layout/SidebarArt";
 
 // "Beranda (National Dashboard)" -> baris 1 "Beranda", baris 2 "(National Dashboard)"
 const splitLabel = (l: string) => { const i = l.indexOf(" ("); return i < 0 ? [l, ""] : [l.slice(0, i), l.slice(i + 1)]; };

@@ -84,7 +84,6 @@ export function ObjectForm({ initial, provinces, sources }: { initial?: Cultural
           <label className={label}>Asal data *
             <select name="data_origin" required defaultValue="" className={input}>
               <option value="" disabled>Pilih asal data…</option>
-              <option value="SIMULATED">SIMULATED (data contoh)</option>
               <option value="PUBLIC">PUBLIC (dataset publik)</option>
               <option value="PARTNER">PARTNER (mitra/instansi)</option>
             </select>

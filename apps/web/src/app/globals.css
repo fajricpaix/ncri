@@ -58,3 +58,35 @@ h1, h2, h3, h4, th, label, legend, summary, button, .cap { text-transform: capit
 /* Ikon kartu statistik: muncul membal setelah gelembung Lottie */
 @keyframes stat-pop { 0% { transform: scale(.3); opacity: 0; } 55% { transform: scale(1.18); opacity: 1; } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: no-preference) { .stat-pop { animation: stat-pop .55s .08s cubic-bezier(.3, 1.4, .5, 1) backwards; } }
+
+/* Halaman login: gerak dekoratif (mati bila reduced-motion) */
+@keyframes login-float { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-14px) rotate(3deg); } }
+@keyframes login-spin { to { transform: rotate(360deg); } }
+@keyframes login-pulse { 0% { transform: scale(.6); opacity: .55; } 100% { transform: scale(1.6); opacity: 0; } }
+@keyframes login-rise { from { opacity: 0; transform: translateY(18px); } }
+@keyframes login-shine { to { background-position: 200% 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .l-float { animation: login-float 6s ease-in-out infinite; }
+  .l-spin { animation: login-spin 60s linear infinite; }
+  .l-spin-rev { animation: login-spin 90s linear infinite reverse; }
+  .l-pulse { animation: login-pulse 4s ease-out infinite; }
+  .l-rise { animation: login-rise .8s cubic-bezier(.2, .8, .2, 1) backwards; }
+  .l-shine { background-size: 200% 100%; animation: login-shine 6s linear infinite; }
+}
+@keyframes login-kenburns { from { transform: scale(1); } to { transform: scale(1.12) translateX(-2%); } }
+@keyframes login-glow { 0%, 100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+@keyframes login-twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: .9; transform: scale(1.4); } }
+@keyframes login-batik { to { background-position: -1200px 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .l-kenburns { animation: login-kenburns 30s ease-in-out infinite alternate; }
+  .l-glow { animation: login-glow 5s ease-in-out infinite; }
+  .l-twinkle { animation: login-twinkle 5s ease-in-out infinite; }
+  .l-spin-fast { animation: login-spin 14s linear infinite; }
+  .l-batik { animation: login-batik 80s linear infinite; }
+}
+@keyframes login-blob { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(40px, 30px) scale(1.15); } }
+@keyframes login-sweep { 0%, 60% { transform: translateX(-120%) skewX(-20deg); } 100% { transform: translateX(260%) skewX(-20deg); } }
+@media (prefers-reduced-motion: no-preference) {
+  .l-blob { animation: login-blob 14s ease-in-out infinite; }
+  .l-btn-shine::after { content: ""; position: absolute; inset: 0; width: 40%; background: linear-gradient(90deg, transparent, rgb(255 255 255 / .6), transparent); animation: login-sweep 3.5s ease-in-out infinite; }
+}

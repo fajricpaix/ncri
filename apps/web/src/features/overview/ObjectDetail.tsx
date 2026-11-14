@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { ChevronRight, MapPin, Layers, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
-import { Projection } from "@/features/ai-predictive-risk-engine/Projection";
+import { ChevronRight, MapPin, Layers, ShieldCheck, Sparkles } from "lucide-react";
 import { ObjectThumb } from "@/features/ai-predictive-risk-engine/ObjectThumb";
-import { simProb } from "@/features/ai-predictive-risk-engine/sim";
 import { Card } from "@/components/ui/Card";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { api } from "@/lib/api-server";
@@ -42,19 +40,13 @@ export async function ObjectDetail({ id, province }: { id: string; province: str
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="raw inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-100"><Layers size={12} aria-hidden />{obj.category}</span>
               <RiskBadge level={level} />
-              {risk.is_simulated && <span className="rounded-md bg-gold-soft px-2 py-0.5 text-[11px] font-bold text-amber-800 ring-1 ring-gold">SIMULATED</span>}
             </div>
           </div>
         </div>
-        <div className="grid w-full grid-cols-3 gap-3 lg:w-[30rem]">
+        <div className="grid w-full grid-cols-2 gap-3 lg:w-80">
           <div className={`rounded-xl p-3 ring-1 ${TONE[level]}`}>
             <p className="cap text-xs font-medium text-slate-700">Skor Risiko Saat Ini</p>
             <p className="mt-2 text-4xl font-bold leading-none">{score === null ? "—" : score.toFixed(0)}<span className="text-sm font-normal text-slate-500"> / 100</span></p>
-          </div>
-          <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200" title="Angka contoh: model prediksi belum ada">
-            <p className="cap text-xs font-medium text-slate-700">Probabilitas Risiko Tinggi (36 Bulan)</p>
-            <p className="mt-2 flex items-center gap-1.5 text-4xl font-bold leading-none text-risk-high">{score === null ? "—" : <><TrendingUp size={22} aria-hidden />{simProb(score)}%</>}</p>
-            <span className="mt-1.5 inline-block rounded bg-gold-soft px-1.5 text-[10px] font-bold text-amber-800">SIMULATED</span>
           </div>
           <div className="rounded-xl bg-green-50 p-3 ring-1 ring-green-200" title="Kepercayaan terhadap kualitas data, terpisah dari skor risiko">
             <p className="cap text-xs font-medium text-slate-700">Tingkat Keyakinan (Confidence)</p>
@@ -63,11 +55,7 @@ export async function ObjectDetail({ id, province }: { id: string; province: str
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr_1fr]">
-        <section className={`${panel} min-w-0`}>
-          <h4 className="mb-1 flex items-center justify-between text-sm font-bold text-navy">Proyeksi Skor Risiko <span className="rounded bg-gold-soft px-1.5 text-[10px] font-bold text-amber-800">SIMULATED</span></h4>
-          {score === null ? <p className="text-sm text-slate-600">Data belum cukup untuk menilai.</p> : <Projection score={score} year={+risk.period_end.slice(0, 4)} />}
-        </section>
+      <div className="grid gap-4 lg:grid-cols-2">
         <section className={panel}>
           <h4 className="mb-3 text-sm font-bold text-navy">Faktor Penggerak Risiko</h4>
           {factors.length === 0 ? <p className="text-sm text-slate-600">Data belum cukup untuk menilai.</p> : (

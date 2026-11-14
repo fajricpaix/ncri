@@ -3,7 +3,7 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
 import type { MapLevel, ProvinceSummary } from "@/types/api";
-import { LEVEL_LABEL } from "./levels";
+import { LEVEL_LABEL } from "@/features/map/levels";
 
 // Palet khusus peta (latar navy gelap): lebih jenuh agar kontras. Badge/chart lain tetap pakai LEVEL_COLOR.
 const MAP_BG = "#0f223d";

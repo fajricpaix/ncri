@@ -106,8 +106,6 @@ class FakeProvider:
                     "target_group": "Komunitas pelaku dan calon penerus", "suggested_kpis": [f"Pemulihan {f['indicator_name']} ≥ nilai periode sebelumnya"],
                     "time_horizon": "6-12 bulan", "evidence_refs": f["evidence_observation_ids"]} for f in top[:2]]
         limits = ["Contoh deterministik dari penyedia 'fake'; bukan hasil model AI."]
-        if user_payload["object"]["data_origin"] == "SIMULATED":
-            limits.append("Seluruh data berstatus SIMULATED.")
         if (a["data_confidence"] or 0) < 0.6:
             limits.append(f"Data confidence rendah ({a['data_confidence']}).")
         return {"summary": f"{self.TAG}Skor risiko {a['risk_score']:.0f}/100 ({a['risk_level']}) untuk {user_payload['object']['name']}.",
@@ -117,8 +115,6 @@ class FakeProvider:
 def _fake_assistant(self, p):
     scored = [o for o in p["objects"] if o["score"] is not None]
     limits = ["Contoh deterministik dari penyedia 'fake'; bukan hasil model AI."]
-    if any(o["data_origin"] == "SIMULATED" for o in p["objects"]):
-        limits.append("Seluruh data berstatus SIMULATED.")
     if not scored:
         return {"answer": f"{self.TAG}Data NCRI untuk cakupan '{p['scope']['name']}' belum cukup untuk dijawab (belum ada objek yang dinilai).",
                 "answerable": False, "evidence_refs": [], "limitations": limits + ["Tidak ada objek dengan skor pada cakupan ini."]}

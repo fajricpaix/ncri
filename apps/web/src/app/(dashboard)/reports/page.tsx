@@ -43,12 +43,6 @@ async function Report({ searchParams }: { searchParams: PageProps<"/reports">["s
           <p className="text-sm text-slate-600">Dibuat {when} · metode {r.method_version}</p>
         </header>
 
-        {r.is_simulated && (
-          <p role="note" className="rounded-xl border-2 border-gold bg-gold-soft p-3 text-sm font-semibold text-amber-900">
-            SIMULATED — laporan ini memuat data simulasi untuk demo teknis. Bukan data resmi dan tidak boleh dipakai sebagai dasar keputusan.
-          </p>
-        )}
-
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           {[["Total objek", r.total_objects], ["Dinilai", r.assessed], ["Risiko tinggi", r.distribution.HIGH],
             ["Risiko sedang", r.distribution.MEDIUM], ["Risiko rendah", r.distribution.LOW]].map(([l, v]) => (

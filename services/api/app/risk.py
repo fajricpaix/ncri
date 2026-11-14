@@ -30,7 +30,6 @@ class Obs:
     verified: bool
     source_id: str
     created_at: datetime
-    simulated: bool = False
 
 
 @dataclass(frozen=True)
@@ -121,7 +120,6 @@ def assess(inds: list[Ind], obs_by_ind: dict[str, list[Obs]], as_of: date, today
         "indicators_expected": len(weighted),
         "period_start": min((o.period_start for o in used), default=min((o.period_start for o in all_obs), default=as_of)),
         "period_end": as_of,
-        "is_simulated": any(o.simulated for o in used) if used else any(o.simulated for o in all_obs),
         "params": PARAMS,
     }
 

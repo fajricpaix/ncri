@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import type { AnimationItem } from "lottie-web";
-import { TONE, type Tone } from "./stat-tone";
+import { TONE, type Tone } from "@/components/ui/stat-tone";
 
 // Gelembung ikon animasi (Lottie). Ikon dikirim sebagai children (elemen dari server). Diputar ulang saat kartu ([data-stat]) di-hover.
 export function StatBubble({ tone, children }: { tone: Tone; children: React.ReactNode }) {

@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { API as PUBLIC_API } from "./api-client";
-import type { User } from "./permissions";
+import { API as PUBLIC_API } from "@/lib/api-client";
+import type { User } from "@/lib/permissions";
 
 /** fetch dari Server Component: meneruskan cookie sesi; 401 -> /login. */
 // Server tidak bisa memakai base relatif ("/api/v1"), jadi produksi mengisi API_SERVER_URL (URL absolut ke API).

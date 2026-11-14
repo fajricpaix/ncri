@@ -25,7 +25,7 @@ def test_metrics_known_values():
     assert r.auc([1, 0], [0.5, 0.5]) == 0.5
 
 
-def test_gate_refuses_pilot_sized_simulated_data():
+def test_gate_refuses_pilot_sized_data():
     st = r.stats(series(6, 3, lambda i, k: 90.0 - 10 * k), target_validated=False)
     g = r.gate(st)
     assert not g["passed"] and len(g["reasons"]) >= 5

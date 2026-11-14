@@ -1,7 +1,7 @@
 import { StatCard, toneOf } from "@/components/ui/StatCard";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ChevronLeft, ChevronRight, Download, Landmark, MapPin, Plus, ShieldCheck, Shapes, FlaskConical } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Landmark, MapPin, Plus, ShieldCheck, Shapes } from "lucide-react";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { Card } from "@/components/ui/Card";
 import { MapCard } from "@/features/map/MapCard";
@@ -36,7 +36,6 @@ async function Content({ searchParams }: { searchParams: PageProps<"/cultural-re
     { label: "Jenis Budaya", value: new Set(rows.map((r) => r.category)).size, icon: Shapes, cls: "text-purple-700 bg-purple-50" },
     { label: "Provinsi Tercakup", value: new Set(rows.map((r) => r.province).filter((p) => p !== "—")).size, icon: MapPin, cls: "text-risk-low bg-green-50" },
     { label: "Terverifikasi", value: rows.filter((r) => r.verification_status === "VERIFIED").length, icon: ShieldCheck, cls: "text-risk-mid bg-amber-50" },
-    { label: "Data SIMULATED", value: rows.filter((r) => r.data_origin === "SIMULATED").length, icon: FlaskConical, cls: "text-slate-600 bg-slate-100" },
   ];
   const categories = [...new Set(all.map((r) => r.category))].sort().map((c) => [c, c] as [string, string]);
   const provOpts = provinces.filter((p) => p.n_objects > 0).map((p) => [p.code, p.name] as [string, string]);
@@ -45,7 +44,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/cultural-re
     <div className="space-y-4">
       <FilterBar action="/cultural-repository" categories={categories} provinces={provOpts} levels={LEVELS} values={f} />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {kpis.map(({ label, value, icon, cls }) => <StatCard key={label} icon={icon} tone={toneOf(cls)} label={label} value={value} />)}
       </div>
 

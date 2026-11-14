@@ -4,12 +4,9 @@ import { PageLoader } from "@/components/ui/PageLoader";
 import { Suspense } from "react";
 import { AlertTriangle, AlertCircle, Gauge, Landmark, ShieldCheck, Database } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { SimulatedBadge } from "@/components/ui/SimulatedBadge";
 import { ObjectThumb } from "@/features/ai-predictive-risk-engine/ObjectThumb";
 import { MapCard } from "@/features/map/MapCard";
 import { Focus } from "@/features/ai-predictive-risk-engine/Focus";
-import { Scenario } from "@/features/ai-predictive-risk-engine/Scenario";
-import { projectScore, simProb } from "@/features/ai-predictive-risk-engine/sim";
 import { api } from "@/lib/api-server";
 import type { Overview, PredictionStatus, ProvinceSummary } from "@/types/api";
 
@@ -26,7 +23,6 @@ async function Content({ searchParams }: { searchParams: PageProps<"/ai-predicti
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
   const selected = rows.find((r) => r.id === one("obj")) ?? rows[0] ?? null;
   const top = rows.slice(0, 5);
-  const base2028 = selected ? projectScore(selected.score ?? 0)[3].mid : 0;
   const kpis = [
     { label: "Objek Budaya Terpantau", value: d.total_objects.toLocaleString("id-ID"), icon: Landmark, cls: "text-navy-2 bg-blue-50" },
     { label: "Risiko Tinggi (Baseline)", value: d.distribution.HIGH, icon: AlertTriangle, cls: "text-risk-high bg-red-50" },
@@ -40,7 +36,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/ai-predicti
     <div className="space-y-4">
       <div role="status" className={`rounded-2xl p-3 text-sm ring-1 ${s.passed ? "bg-green-50 ring-green-200" : "bg-amber-50 ring-amber-200"}`}>
         <p className="font-semibold">{s.passed ? "Prediksi memenuhi gerbang validasi" : "Model prediksi belum divalidasi"}</p>
-        <p className="mt-0.5 text-slate-700">{s.passed ? "Semua syarat terpenuhi." : "Skor saat ini = baseline nyata. Probabilitas, proyeksi, dan simulasi di halaman ini berlabel SIMULATED: contoh tampilan, bukan hasil model."}</p>
+        <p className="mt-0.5 text-slate-700">{s.passed ? "Semua syarat terpenuhi." : "Skor saat ini = baseline nyata. Probabilitas dan proyeksi belum ditampilkan sampai model lulus validasi."}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
@@ -52,13 +48,12 @@ async function Content({ searchParams }: { searchParams: PageProps<"/ai-predicti
         {selected
           ? <Suspense fallback={<PageLoader label="Memuat detail…" />}><Focus id={selected.id} province={selected.province} /></Suspense>
           : <Card title="Detail Objek"><p className="text-sm text-slate-600">Belum ada objek yang dinilai.</p></Card>}
-        {selected && <Scenario key={selected.id} base={base2028} />}
       </div>
 
       <div className="[&>*]:min-w-0">
-        <Card title="Daftar Objek Skor Tertinggi" action={<span className="flex items-center gap-3"><SimulatedBadge /><Link href="/cultural-risk-assessment" className="cap text-xs font-semibold hover:underline">Lihat Semua →</Link></span>} className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="text-xs text-navy"><tr><th className="py-2 pr-4">Peringkat</th><th className="pr-4">Objek Budaya</th><th className="pr-4">Provinsi</th><th className="text-center">Skor Saat Ini</th><th className="text-center">Prediksi 2028</th><th className="text-center">Probabilitas</th><th className="text-center">Aksi</th></tr></thead>
+        <Card title="Daftar Objek Skor Tertinggi" action={<Link href="/cultural-risk-assessment" className="cap text-xs font-semibold hover:underline">Lihat Semua →</Link>} className="overflow-x-auto">
+          <table className="w-full min-w-[520px] text-left text-sm">
+            <thead className="text-xs text-navy"><tr><th className="py-2 pr-4">Peringkat</th><th className="pr-4">Objek Budaya</th><th className="pr-4">Provinsi</th><th className="text-center">Skor Saat Ini</th><th className="text-center">Aksi</th></tr></thead>
             <tbody>
               {top.map((r, i) => {
                 const sc = r.score ?? 0;
@@ -68,15 +63,13 @@ async function Content({ searchParams }: { searchParams: PageProps<"/ai-predicti
                     <td className="pr-4"><div className="flex items-center gap-3"><ObjectThumb name={r.name} size={44} /><span className="raw font-bold text-navy">{r.name}</span></div></td>
                     <td className="raw pr-4">{r.province}</td>
                     <td className="text-center"><span className={`inline-block min-w-11 rounded-md px-2.5 py-1 font-bold text-white ${PILL[r.level]}`}>{sc.toFixed(0)}</span></td>
-                    <td className="text-center"><span title="SIMULATED" className="inline-block min-w-11 rounded-md bg-slate-400 px-2.5 py-1 font-bold text-white">{projectScore(sc)[3].mid}</span></td>
-                    <td className="text-center font-bold text-slate-500" title="SIMULATED">{simProb(sc)}%</td>
                     <td className="text-center"><Link href={`/ai-predictive-risk-engine/${r.id}`} className="cap btn-gold px-3 py-1.5 text-xs font-semibold text-navy shadow-sm">Detail</Link></td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          <p className="mt-2 text-xs text-slate-500">Skor saat ini = baseline nyata (merah = tinggi). Prediksi 2028 (abu-abu) dan Probabilitas = SIMULATED. Foto: Wikipedia, tanpa foto = ikon.</p>
+          <p className="mt-2 text-xs text-slate-500">Skor saat ini = baseline nyata (merah = tinggi). Foto: Wikipedia, tanpa foto = ikon.</p>
         </Card>
       </div>
 
@@ -95,11 +88,6 @@ async function Content({ searchParams }: { searchParams: PageProps<"/ai-predicti
             ))}
           </tbody>
         </table>
-        {s.excluded_simulated > 0 && (
-          <p role="note" className="mt-3 rounded-lg bg-gold-soft p-2 text-xs font-semibold text-amber-900">
-            {s.excluded_simulated} penilaian berbasis data SIMULATED tidak dihitung di sini. Data simulasi tidak boleh menjadi dasar kesiapan prediksi.
-          </p>
-        )}
         <p className="mt-3 text-xs text-slate-500">Ambang adalah usulan awal untuk dibahas dengan ahli statistik, bukan standar baku.</p>
       </Card>
 

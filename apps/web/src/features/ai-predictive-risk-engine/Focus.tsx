@@ -2,13 +2,10 @@ import Link from "next/link";
 import { MapPin, Layers, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { RiskBadge } from "@/components/ui/RiskBadge";
-import { SimulatedBadge } from "@/components/ui/SimulatedBadge";
 import { api } from "@/lib/api-server";
 import type { Analysis, CulturalObject, Risk } from "@/types/api";
-import { Projection } from "./Projection";
-import { simProb } from "./sim";
 
-// Panel objek terpilih. Skor, faktor, confidence, insight = data nyata (baseline). Probabilitas & proyeksi = SIMULATED.
+// Panel objek terpilih. Skor, faktor, confidence, insight = data nyata (baseline). Probabilitas dan proyeksi belum ada (model belum divalidasi).
 export async function Focus({ id, province, wide = false }: { id: string; province: string; wide?: boolean }) {
   const [obj, risk, analyses] = await Promise.all([
     api<CulturalObject>(`/cultural-objects/${id}`),
@@ -20,7 +17,7 @@ export async function Focus({ id, province, wide = false }: { id: string; provin
   const total = risk.factors.reduce((a, f) => a + f.contribution, 0) || 1;
   const factors = [...risk.factors].sort((a, b) => b.contribution - a.contribution).slice(0, 5);
 
-  // Fragment: 3 item grid (panel objek, proyeksi, faktor). Induk menaruhnya di grid 4 kolom.
+  // Fragment: 2 item grid (panel objek, faktor). Induk menaruhnya di grid 4 kolom.
   return (
     <>
       <div className={`flex flex-col gap-4 ${wide ? "xl:col-span-4" : ""}`}>
@@ -31,12 +28,10 @@ export async function Focus({ id, province, wide = false }: { id: string; provin
             <RiskBadge level={risk.risk_level} />
             <span className="raw inline-flex items-center gap-1"><MapPin size={14} aria-hidden />{province}</span>
             <span className="raw inline-flex items-center gap-1"><Layers size={14} aria-hidden />{obj.category}</span>
-            {obj.data_origin === "SIMULATED" && <SimulatedBadge />}
           </div>
         </div>
-        <div className={`grid gap-2 ${wide ? "grid-cols-3 text-center" : "w-full"}`}>
+        <div className={`grid gap-2 ${wide ? "grid-cols-2 text-center" : "w-full"}`}>
           <div className="flex items-center justify-between gap-2 rounded-xl bg-red-50 px-3 py-2"><p className="cap text-xs text-slate-600">Skor Risiko Saat Ini</p><p className="text-2xl font-bold text-risk-high">{score === null ? "—" : score.toFixed(0)}<span className="text-xs font-normal text-slate-500"> / 100</span></p></div>
-          <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-gold" title="SIMULATED, bukan hasil model"><p className="cap text-xs text-slate-600">Probabilitas Risiko Tinggi <SimulatedBadge /></p><p className="text-2xl font-bold">{score === null ? "—" : `${simProb(score)}%`}</p></div>
           <div className="flex items-center justify-between gap-2 rounded-xl bg-green-50 px-3 py-2" title="Terpisah dari skor risiko"><p className="cap text-xs text-slate-600">Data Confidence</p><p className="text-2xl font-bold text-risk-low">{risk.data_confidence?.toFixed(2).replace(".", ",") ?? "—"}</p></div>
         </div>
       </Card>
@@ -45,11 +40,7 @@ export async function Focus({ id, province, wide = false }: { id: string; provin
         <Link href={`/cultural-repository/${id}`} className="cap mt-3 inline-block btn-gold px-3 py-1.5 text-sm font-semibold text-navy">Lihat Rekomendasi Lengkap</Link>
       </Card>
       </div>
-        <Card title="Proyeksi Skor Risiko" className={wide ? "xl:col-span-2" : ""} action={<SimulatedBadge />}>
-          {score === null ? <p className="text-sm text-slate-600">Data belum cukup untuk menilai.</p> : <Projection score={score} year={+risk.period_end.slice(0, 4)} />}
-          <p className="mt-2 text-xs text-slate-500">Hanya titik saat ini yang nyata. Garis proyeksi dan rentangnya karangan, model belum divalidasi.</p>
-        </Card>
-        <Card title="Faktor Penggerak Risiko" className={wide ? "xl:col-span-2" : ""} bodyClassName="flex flex-col gap-2">
+        <Card title="Faktor Penggerak Risiko" className={wide ? "xl:col-span-4" : ""} bodyClassName="flex flex-col gap-2">
           {factors.length === 0 ? <p className="text-sm text-slate-600">Data belum cukup untuk menilai.</p> : factors.map((f) => {
             const pct = Math.round((f.contribution / total) * 100);
             return (

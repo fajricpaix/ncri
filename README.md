@@ -12,7 +12,6 @@ cd services/api && uvicorn app.main:app --reload --port 8000
 # Web
 cd apps/web && cp .env.example .env.local && yarn dev
 ```
-Demo juri: `docs/demo-script.md` (reset data: `cd services/api && python -m app.demo_reset`). Bukti kriteria MVP: `docs/acceptance-mvp.md`.
 Peta & laporan: `/risk-map`, `/reports` (ekspor CSV + cetak PDF). Sumber peta & lisensi: `data/README.md`.
 Login demo (hanya development): `admin|analyst|reviewer|viewer@ncri.local`, kata sandi `ncri-demo-123`. Lihat `docs/auth-rbac.md`.
 Web: http://localhost:3000 · API docs: http://localhost:8000/docs

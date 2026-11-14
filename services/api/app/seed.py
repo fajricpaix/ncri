@@ -30,15 +30,6 @@ INDICATORS = [
     ("TRAINING_PARTICIPANTS", "Peserta pelatihan", "orang", LOW, 0.0),
     ("DATA_FRESHNESS_DAYS", "Umur data sejak pembaruan", "hari", HIGH, 0.0),
 ]
-# objek budaya nyata, tetapi seluruh angka indikatornya SIMULASI
-OBJECTS = [
-    ("OBJ-001", "Tari Topeng Cirebon", "Kesenian", "32"),
-    ("OBJ-002", "Kain Tenun Sumba", "Kerajinan", "53"),
-    ("OBJ-003", "Gamelan Salendro", "Kesenian", "33"),
-    ("OBJ-004", "Tradisi Bau Nyale", "Tradisi", "52"),
-    ("OBJ-005", "Ukir Jepara", "Kerajinan", "33"),
-    ("OBJ-006", "Reog Ponorogo", "Kesenian", "35"),  # sengaja tanpa observasi => INSUFFICIENT_DATA
-]
 
 
 def run():
@@ -53,17 +44,7 @@ def run():
                 avail = m.Availability.PARTIAL if w else m.Availability.NOT_AVAILABLE
                 db.add(m.Indicator(code=code, name=name, description=name, unit=unit,
                                    direction=direction, default_weight=w, availability=avail))
-        if not db.scalar(select(m.DataSource).where(m.DataSource.code == "SIM-01")):
-            db.add(m.DataSource(code="SIM-01", name="Data simulasi NCRI", source_type=m.SourceType.MANUAL,
-                                description="Data sintetis untuk demo teknis. BUKAN data resmi.",
-                                license_notes="Dibuat internal"))
         db.flush()
-        regions = {r.code: r.id for r in db.scalars(select(m.Region))}
-        have = set(db.scalars(select(m.CulturalObject.external_code)))
-        for code, name, cat, prov in OBJECTS:
-            if code not in have:
-                db.add(m.CulturalObject(external_code=code, name=name, category=cat, region_id=regions[prov],
-                                        data_origin=m.Origin.SIMULATED))
         if settings.app_env == "development":  # akun demo HANYA di development
             pw = os.getenv("DEMO_PASSWORD", "ncri-demo-123")
             have = set(db.scalars(select(m.User.email)))

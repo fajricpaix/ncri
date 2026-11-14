@@ -20,7 +20,6 @@ class Role(str, enum.Enum):
 
 class Origin(str, enum.Enum):
     PUBLIC = "PUBLIC"
-    SIMULATED = "SIMULATED"
     PARTNER = "PARTNER"
 
 
@@ -218,7 +217,6 @@ class RiskAssessment(Base):
     method_version: Mapped[str] = mapped_column(String)
     data_quality_score: Mapped[float | None] = mapped_column(Numeric)
     explanation_json: Mapped[dict] = mapped_column(JSONB, default=dict)
-    is_simulated: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = _ts()
     factors: Mapped[list["RiskAssessmentFactor"]] = relationship(cascade="all, delete-orphan")
 

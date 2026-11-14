@@ -2,12 +2,11 @@
 import Link from "next/link";
 import { StatCard, toneOf } from "@/components/ui/StatCard";
 import { useState } from "react";
-import { AlertCircle, AlertTriangle, Building2, Gauge, HelpCircle, Landmark, MapPin, RotateCcw, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { AlertCircle, AlertTriangle, Gauge, HelpCircle, Landmark, MapPin, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { LEVEL_LABEL } from "@/features/map/levels";
 import { Legend, RiskMap } from "@/features/map/RiskMap";
-import { simCommunities, simProb36, simRegencies, simTrend } from "./sim";
 import type { MapLevel, ProvinceSummary, RiskLevelName } from "@/types/api";
 
 type Obj = ProvinceSummary["objects"][number] & { province: string; pcode: string };
@@ -17,13 +16,6 @@ const sel = "raw mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py
 // Ambang level dari docs/risk-methodology.md (70/40); hanya untuk warna & label gauge
 const scoreLevel = (s: number): RiskLevelName => (s >= 70 ? "HIGH" : s >= 40 ? "MEDIUM" : "LOW");
 const avg = (xs: number[]) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : null);
-
-function Spark({ pts }: { pts: number[] }) {
-  const up = pts[4] >= pts[0];
-  const d = pts.map((v, i) => `${i ? "L" : "M"}${i * 12} ${22 - (v / 100) * 20}`).join("");
-  return <svg viewBox="0 0 48 24" className="w-12" aria-label={up ? "Naik" : "Turun"} role="img"><path d={d} fill="none" stroke={up ? "#d64545" : "#2e9e5b"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
-}
-const SimTag = () => <span className="ml-1 rounded bg-gold-soft px-1 text-[10px] font-bold text-amber-800 ring-1 ring-gold">SIM</span>;
 
 function Gauge_({ score }: { score: number | null }) {
   const color = score === null ? "#8a94a6" : { HIGH: "#d64545", MEDIUM: "#e8a317", LOW: "#2e9e5b", INSUFFICIENT_DATA: "#8a94a6" }[scoreLevel(score)];
@@ -52,9 +44,6 @@ export function RiskMappingGis({ provinces, initial }: { provinces: ProvinceSumm
   const categories = [...new Set(all.map((o) => o.category))].sort();
   const scope = sp?.name ?? "Nasional";
   const top = scoped.filter((o) => o.level === "HIGH").sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 3);
-  const byProv = provinces.filter((p) => !prov || p.code === prov);
-  const communities = byProv.reduce((a, p) => a + simCommunities(p.code, p.n_objects), 0);
-  const regencies = byProv.reduce((a, p) => a + simRegencies(p.n_objects), 0);
   const reset = () => { setProv(null); setCat(""); setLvl("ALL"); };
 
   const kpis = [
@@ -63,15 +52,13 @@ export function RiskMappingGis({ provinces, initial }: { provinces: ProvinceSumm
     { label: "Risiko Sedang", value: count("MEDIUM"), icon: AlertCircle, cls: "text-risk-mid bg-amber-50" },
     { label: "Risiko Rendah", value: count("LOW"), icon: ShieldCheck, cls: "text-risk-low bg-green-50" },
     { label: "Data Kurang", value: count("INSUFFICIENT_DATA"), icon: HelpCircle, cls: "text-slate-600 bg-slate-100" },
-    { label: "Komunitas Budaya", value: communities.toLocaleString("id-ID"), icon: Users, cls: "text-purple-700 bg-purple-50", sim: true },
-    { label: "Kab/Kota Terdampak", value: regencies.toLocaleString("id-ID"), icon: Building2, cls: "text-navy-2 bg-blue-50", sim: true },
     { label: "Skor Rata-rata", value: score ?? "—", icon: Gauge, cls: "text-navy-2 bg-blue-50" },
   ];
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {kpis.map(({ label, value, icon, cls, sim }) => <StatCard key={label} icon={icon} tone={toneOf(cls)} label={label} value={value} sim={sim} />)}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        {kpis.map(({ label, value, icon, cls }) => <StatCard key={label} icon={icon} tone={toneOf(cls)} label={label} value={value} />)}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px] [&>*]:min-w-0">
@@ -91,7 +78,6 @@ export function RiskMappingGis({ provinces, initial }: { provinces: ProvinceSumm
               <div className="flex flex-wrap items-center gap-2">
                 <p className="raw text-lg font-bold text-navy">{scope}</p>
                 {sp && <span className="text-xs text-slate-500">Kode: {sp.code}</span>}
-                {(sp ? sp.is_simulated : all.some((o) => o.is_simulated)) && <span className="rounded-md bg-gold-soft px-2 py-0.5 text-[11px] font-bold text-amber-800 ring-1 ring-gold">SIMULATED</span>}
               </div>
               {sp?.merged_note && <p className="text-xs text-slate-500">{sp.merged_note}</p>}
               <div className="grid grid-cols-4 gap-2 text-center">
@@ -117,10 +103,6 @@ export function RiskMappingGis({ provinces, initial }: { provinces: ProvinceSumm
                   })}
                 </ul>
               </div>
-              <dl className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-xl bg-slate-50 p-2 ring-1 ring-slate-200"><dt className="cap text-slate-500">Komunitas Budaya<SimTag /></dt><dd className="text-base font-bold text-navy">{communities.toLocaleString("id-ID")}</dd></div>
-                <div className="rounded-xl bg-slate-50 p-2 ring-1 ring-slate-200"><dt className="cap text-slate-500">Kab/Kota Terdampak<SimTag /></dt><dd className="text-base font-bold text-navy">{regencies.toLocaleString("id-ID")}</dd></div>
-              </dl>
               <p className="text-xs text-slate-500">Data confidence rata-rata: <b className="text-navy">{conf ?? "—"}</b> (terpisah dari skor risiko).</p>
             </div>
           </Card>
@@ -160,23 +142,21 @@ export function RiskMappingGis({ provinces, initial }: { provinces: ProvinceSumm
           <button onClick={reset} className="inline-flex items-center justify-center gap-1.5 self-end rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-navy hover:bg-slate-50"><RotateCcw size={14} aria-hidden />Reset</button>
         </div>
         <div className="max-h-[480px] overflow-auto">
-          <table className="w-full min-w-[820px] text-left text-sm [&_td]:px-3 [&_td]:py-2.5 [&_th]:px-3 [&_th]:py-2.5 [&_th]:whitespace-nowrap">
+          <table className="w-full min-w-[640px] text-left text-sm [&_td]:px-3 [&_td]:py-2.5 [&_th]:px-3 [&_th]:py-2.5 [&_th]:whitespace-nowrap">
             <thead className="sticky top-0 bg-slate-50 text-xs text-slate-500 shadow-[0_1px_0_#e2e8f0]">
-              <tr><th className="w-12 text-right">No</th><th>Objek Budaya</th><th>Provinsi</th><th>Skor &amp; Tingkat</th><th>Prob. 36 Bln<SimTag /></th><th>Tren<SimTag /></th><th className="text-right">Aksi</th></tr>
+              <tr><th className="w-12 text-right">No</th><th>Objek Budaya</th><th>Provinsi</th><th>Skor &amp; Tingkat</th><th className="text-right">Aksi</th></tr>
             </thead>
             <tbody>
-              {rows.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-slate-500">Tidak ada objek untuk filter ini.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={5} className="py-8 text-center text-slate-500">Tidak ada objek untuk filter ini.</td></tr>}
               {rows.map((o, i) => (
                 <tr key={o.id} className="border-t border-slate-100 hover:bg-slate-50/60">
                   <td className="text-right text-slate-400">{i + 1}</td>
                   <td className="raw min-w-56">
-                    <p className="font-semibold text-navy">{o.name}{o.is_simulated && <span className="ml-1.5 rounded bg-gold-soft px-1 text-[10px] font-bold text-amber-800 ring-1 ring-gold">SIM</span>}</p>
+                    <p className="font-semibold text-navy">{o.name}</p>
                     <p className="text-xs text-slate-500">{o.category}</p>
                   </td>
                   <td className="raw whitespace-nowrap text-slate-600">{o.province}</td>
                   <td className="whitespace-nowrap"><span className="mr-2 inline-block w-7 text-right text-base font-bold">{o.score !== null ? o.score.toFixed(0) : "—"}</span><RiskBadge level={o.level} /></td>
-                  <td className="font-semibold">{o.score !== null ? `${simProb36(o.score)}%` : "—"}</td>
-                  <td>{o.score !== null ? <Spark pts={simTrend(o.id, o.score)} /> : "—"}</td>
                   <td className="text-right"><Link href={`/cultural-repository/${o.id}`} className="btn-gold px-3 py-1 text-xs font-semibold text-navy">Detail</Link></td>
                 </tr>
               ))}

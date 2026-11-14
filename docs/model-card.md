@@ -10,7 +10,7 @@ Memberi sinyal dini kepada analis kebijakan tentang objek yang berpeluang masuk 
 `event = 1` bila skor risiko `baseline-0.1` periode t+1 ≥ 70. Catatan penting: target ini **dihitung dari skor baseline yang bobotnya sendiri belum divalidasi**, sehingga model belajar menirukan formula, bukan fenomena budaya. Sebelum model apa pun dipercaya, target perlu didefinisikan ulang bersama ahli (mis. dari penilaian lapangan atau status inventaris yang terverifikasi).
 
 ## Data
-- Saat ini: 6 objek sampel **SIMULATED**, 3 periode. Tidak cukup untuk apa pun selain mendemonstrasikan alur.
+- Saat ini: data hasil impor CSV belum diverifikasi lapangan. Tidak cukup untuk melatih model; gerbang validasi tetap menolak.
 - Dibutuhkan (usulan awal, untuk dibahas dengan ahli statistik): ≥ 30 objek, ≥ 5 periode per objek, ≥ 100 pasangan periode, ≥ 15 kejadian HIGH, ≥ 30 pasangan uji. Dicek otomatis dan ditampilkan di halaman Predictive Analytics.
 
 ## Protokol evaluasi
@@ -29,7 +29,7 @@ Belum ada. Library ML (scikit-learn/XGBoost) sengaja belum dipasang; ditambahkan
 - **Kelas langka**: sedikit kejadian HIGH membuat estimasi tidak stabil.
 - **Umpan balik**: bila prediksi dipakai mengarahkan intervensi, data berikutnya ikut berubah (tidak dimodelkan).
 - **Korelasi ≠ sebab**: tidak ada klaim kausal.
-- **Data simulasi**: tidak ada kesimpulan ilmiah yang boleh ditarik dari angka demo.
+- **Data belum terverifikasi**: tidak ada kesimpulan ilmiah yang boleh ditarik dari angka yang belum diverifikasi.
 
 ## Yang perlu dilakukan sebelum prediksi boleh tampil
 1. Kumpulkan data historis nyata (sumber & izin tercatat di `data/README.md`).

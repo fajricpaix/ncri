@@ -55,7 +55,7 @@ class CulturalObjectIn(BaseModel):
 
 
 class CulturalObjectUpdate(BaseModel):
-    """Edit sebagian. data_origin sengaja tidak ada: label SIMULATED tidak boleh diubah diam-diam."""
+    """Edit sebagian. data_origin sengaja tidak ada: asal data tidak boleh diubah diam-diam."""
     model_config = ConfigDict(extra="forbid")
     external_code: str | None = None
     name: str | None = Field(default=None, min_length=1)
@@ -136,7 +136,6 @@ class RiskOut(BaseModel):
     risk_level: str
     data_confidence: float | None
     method_version: str
-    is_simulated: bool
     factors: list[RiskFactorOut]
     confidence_components: dict[str, float]
     params: dict

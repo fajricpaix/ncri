@@ -28,7 +28,6 @@ function RiskPanel({ risk }: { risk: Risk }) {
         </div>
         <p className="text-xs text-slate-500">
           Periode s.d. {risk.period_end} · metode {risk.method_version}
-          {risk.is_simulated && " · berbasis data SIMULATED"}
         </p>
       </div>
       {risk.factors.length > 0 ? (

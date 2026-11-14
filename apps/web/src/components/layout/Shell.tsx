@@ -1,9 +1,9 @@
 "use client";
 import { Suspense, useState } from "react";
 import { Menu } from "lucide-react";
-import { PageIntro } from "./PageIntro";
-import { Sidebar } from "./Sidebar";
-import { Topbar } from "./Topbar";
+import { PageIntro } from "@/components/layout/PageIntro";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { Topbar } from "@/components/layout/Topbar";
 
 export function Shell({ footer, children }: { footer: React.ReactNode; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);

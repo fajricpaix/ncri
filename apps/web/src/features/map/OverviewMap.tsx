@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import type { ProvinceSummary } from "@/types/api";
-import { Legend, RiskMap } from "./RiskMap";
+import { Legend, RiskMap } from "@/features/map/RiskMap";
 
 export function OverviewMap({ provinces, height = 340 }: { provinces: ProvinceSummary[]; height?: number }) {
   const router = useRouter();

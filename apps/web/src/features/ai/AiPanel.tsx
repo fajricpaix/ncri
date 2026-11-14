@@ -5,8 +5,8 @@ import { useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { useCan } from "@/lib/user-context";
 import type { Analysis } from "@/types/api";
-import { AnalysisView, ProviderLabel } from "./AnalysisView";
-import { ReviewButtons, StatusBadge } from "./ReviewButtons";
+import { AnalysisView, ProviderLabel } from "@/features/ai/AnalysisView";
+import { ReviewButtons, StatusBadge } from "@/features/ai/ReviewButtons";
 
 const KINDS = [
   ["risk-explanation", "Jelaskan risiko"],

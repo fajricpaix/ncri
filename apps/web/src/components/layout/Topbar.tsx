@@ -2,13 +2,12 @@
 import { useRef } from "react";
 import { Bell, LogOut, UserCircle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { SimulatedBadge } from "@/components/ui/SimulatedBadge";
 import { apiFetch } from "@/lib/api-client";
 import { ROLE_LABEL } from "@/lib/permissions";
 import { useUser } from "@/lib/user-context";
-import { SearchLottie } from "./SearchLottie";
-import { HeaderArt } from "./HeaderArt";
-import { NAV } from "./nav";
+import { SearchLottie } from "@/components/layout/SearchLottie";
+import { HeaderArt } from "@/components/layout/HeaderArt";
+import { NAV } from "@/components/layout/nav";
 
 export function Topbar({ menu }: { menu?: React.ReactNode }) {
   const user = useUser();
@@ -34,7 +33,6 @@ export function Topbar({ menu }: { menu?: React.ReactNode }) {
         <p className="cap hidden truncate text-xs text-white/75 sm:block">{page.subtitle}</p>
       </div>
       <div className="hidden flex-1 md:block" />
-      <span className="relative"><SimulatedBadge /></span>
       <label ref={searchBox} className="relative hidden md:block">
         <span className="sr-only">Cari objek budaya, wilayah, atau program</span>
         <SearchLottie host={searchBox} />

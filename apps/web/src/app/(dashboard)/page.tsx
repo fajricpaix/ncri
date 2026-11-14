@@ -2,9 +2,8 @@ import Link from "next/link";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { Suspense } from "react";
 import { Card } from "@/components/ui/Card";
-import { SimulatedBadge } from "@/components/ui/SimulatedBadge";
 import { OverviewMap } from "@/features/map/OverviewMap";
-import { CategorySpread, Composition, EarlyWarning, InsightBand, KpiStrip, ProgramImpact, ProgramStatus, TopProvinces } from "@/features/overview/panels";
+import { CategorySpread, Composition, EarlyWarning, InsightBand, KpiStrip, TopProvinces } from "@/features/overview/panels";
 import { RunRiskButton } from "@/features/overview/RunRiskButton";
 import { TrendChart } from "@/features/overview/TrendChart";
 import { api } from "@/lib/api-server";
@@ -31,7 +30,6 @@ async function Content() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        {d.is_simulated && <SimulatedBadge />}
         <span className="text-sm text-slate-600">{d.assessed_objects} dari {d.total_objects} objek memiliki data cukup untuk dinilai</span>
         <span className="ml-auto"><RunRiskButton /></span>
         <p className="w-full text-xs text-slate-500">
@@ -63,9 +61,7 @@ async function Content() {
         </Card>
         <div className="md:col-span-2 xl:col-span-3"><TopProvinces provinces={provinces} /></div>
 
-        <div className="xl:col-span-2"><CategorySpread provinces={provinces} /></div>
-        <div className="xl:col-span-2"><ProgramStatus /></div>
-        <div className="md:col-span-2 xl:col-span-2"><ProgramImpact /></div>
+        <div className="md:col-span-2 xl:col-span-6"><CategorySpread provinces={provinces} /></div>
 
         <InsightBand top={top} insight={insight} recs={recs} />
       </div>

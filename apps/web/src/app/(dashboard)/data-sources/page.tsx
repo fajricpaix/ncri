@@ -32,7 +32,7 @@ export default function DataSources() {
       <Card title="Sumber Data" className="overflow-x-auto">
         <Suspense fallback={<PageLoader label="Memuat…" />}><Sources /></Suspense>
       </Card>
-      <Card title="Import Observasi Indikator (CSV)">
+      <Card title="Import Data (CSV)">
         <CsvImport />
       </Card>
     </div>

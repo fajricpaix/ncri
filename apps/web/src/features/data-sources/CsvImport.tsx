@@ -11,7 +11,14 @@ type State =
   | { step: "done"; report: ImportReport }
   | { step: "error"; message: string };
 
+const KINDS = [
+  ["sources", "1. Sumber Data"],
+  ["objects", "2. Objek Budaya"],
+  ["observations", "3. Observasi Indikator"],
+] as const;
+
 export function CsvImport() {
+  const [kind, setKind] = useState<string>("sources");
   const [file, setFile] = useState<File | null>(null);
   const [state, setState] = useState<State>({ step: "idle" });
   const allowed = useCan("analyze");
@@ -23,7 +30,7 @@ export function CsvImport() {
     const body = new FormData();
     body.append("file", file);
     try {
-      const r = await apiFetch(`/data-imports/csv?commit=${commit}`, { method: "POST", body });
+      const r = await apiFetch(`/data-imports/csv?kind=${kind}&commit=${commit}`, { method: "POST", body });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
         throw new Error(typeof d.detail === "string" ? d.detail : `Error ${r.status}`);
@@ -42,6 +49,13 @@ export function CsvImport() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <label className="text-sm font-medium">
+          <span className="sr-only">Jenis Data</span>
+          <select value={kind} onChange={(e) => { setKind(e.target.value); setState({ step: "idle" }); }}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            {KINDS.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+          </select>
+        </label>
+        <label className="text-sm font-medium">
           <span className="sr-only">File CSV</span>
           <input
             type="file"
@@ -54,7 +68,7 @@ export function CsvImport() {
           className="btn-gold px-4 py-2 text-sm font-semibold text-navy disabled:opacity-50">
           Validasi & pratinjau
         </button>
-        <a href={`${API}/data-imports/template.csv`} className="text-sm text-navy-2 underline">Unduh template CSV</a>
+        <a href={`${API}/data-imports/template.csv?kind=${kind}`} className="text-sm text-navy-2 underline">Unduh template CSV</a>
       </div>
 
       {busy && <p role="status" className="text-sm text-slate-500">{state.label}</p>}

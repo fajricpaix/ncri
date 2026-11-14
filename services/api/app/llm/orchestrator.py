@@ -49,7 +49,6 @@ def build_context(db: Session, object_id: uuid.UUID):
             "data_confidence": float(a.data_quality_score), "method_version": a.method_version,
             "confidence_components": a.explanation_json["confidence_components"],
             "period_start": a.period_start.isoformat(), "period_end": a.period_end.isoformat(),
-            "is_simulated": a.is_simulated,
             "factors": [{"indicator_name": f.indicator.name, "indicator_code": f.indicator.code,
                          "normalized_risk": float(f.normalized_value), "weight": float(f.weight_used),
                          "contribution": float(f.weighted_contribution), "change_pct": float(f.change_pct),

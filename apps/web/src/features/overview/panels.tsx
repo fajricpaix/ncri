@@ -1,11 +1,9 @@
 import Link from "next/link";
 import { StatCard, toneOf } from "@/components/ui/StatCard";
-import { ArrowRight, BadgeCheck, Bell, CheckCircle2, Layers, MapPin, Sparkles, Target, TriangleAlert, type LucideIcon } from "lucide-react";
+import { ArrowRight, BadgeCheck, Bell, CheckCircle2, Layers, Sparkles, Target, TriangleAlert } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { RiskBadge } from "@/components/ui/RiskBadge";
-import { SimulatedBadge } from "@/components/ui/SimulatedBadge";
 import type { Analysis, Overview, ProvinceSummary, Recommendation, RiskLevelName } from "@/types/api";
-import { SIM } from "./simulated";
 
 const id = (n: number, d = 0) => n.toLocaleString("id-ID", { minimumFractionDigits: d, maximumFractionDigits: d });
 const COLOR: Record<RiskLevelName, string> = { HIGH: "#d64545", MEDIUM: "#e8a317", LOW: "#2e9e5b", INSUFFICIENT_DATA: "#8a94a6" };
@@ -26,27 +24,18 @@ export function Donut({ segs, center, sub, size = "size-28" }: { segs: { value: 
   );
 }
 
-function Delta({ v, unit = "%", worse = false }: { v: number; unit?: string; worse?: boolean }) {
-  const good = (v >= 0) !== worse;
-  return <span className={`text-xs font-semibold ${v === 0 ? "text-slate-500" : good ? "text-risk-low" : "text-risk-high"}`}>{v > 0 ? "▲ +" : v < 0 ? "▼ " : "● "}{id(v, 1)}{unit}</span>;
-}
-
-type Kpi = { label: string; value: string; icon: LucideIcon; tone: string; sim?: boolean; foot: React.ReactNode };
-
 export function KpiStrip({ d }: { d: Overview }) {
-  const k = SIM.kpis;
-  const items: Kpi[] = [
-    { label: "Total Objek Budaya", value: id(d.total_objects), icon: Layers, tone: "text-navy-2 bg-blue-50", foot: <span className="text-xs text-slate-500">{d.assessed_objects} dinilai</span> },
-    { label: "Pelaku Budaya", value: id(k.pelaku.value), icon: BadgeCheck, tone: "text-purple-700 bg-purple-50", sim: true, foot: <Delta v={k.pelaku.delta} /> },
-    { label: "Komunitas Aktif", value: id(k.komunitas.value), icon: MapPin, tone: "text-risk-low bg-green-50", sim: true, foot: <Delta v={k.komunitas.delta} /> },
-    { label: "Program Pelestarian", value: id(k.program.value), icon: Layers, tone: "text-risk-mid bg-amber-50", sim: true, foot: <Delta v={k.program.delta} /> },
-    { label: "Indeks Keberlangsungan", value: id(k.indeks.value, 1), icon: TriangleAlert, tone: "text-risk-high bg-red-50", sim: true, foot: <Delta v={k.indeks.delta} unit=" pt" /> },
+  const w = d.open_warnings;
+  const items = [
+    { label: "Total Objek Budaya", value: id(d.total_objects), icon: Layers, tone: "text-navy-2 bg-blue-50", foot: `${d.assessed_objects} dinilai` },
+    { label: "Objek Risiko Tinggi", value: id(d.distribution.HIGH), icon: TriangleAlert, tone: "text-risk-high bg-red-50", foot: `${id(d.distribution.MEDIUM)} risiko sedang` },
+    { label: "Peringatan Terbuka", value: id(w.HIGH + w.MEDIUM + w.LOW), icon: Bell, tone: "text-risk-mid bg-amber-50", foot: `${id(w.HIGH)} prioritas tinggi` },
+    { label: "Rata-rata Data Confidence", value: d.avg_confidence === null ? "—" : id(d.avg_confidence, 2), icon: BadgeCheck, tone: "text-risk-low bg-green-50", foot: "terpisah dari skor risiko" },
   ];
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-      {items.map(({ label, value, icon, tone, sim, foot }) => (
-        <StatCard key={label} icon={icon} tone={toneOf(tone)} label={label} sim={sim} foot={foot}
-          value={<>{value}{label === "Indeks Keberlangsungan" && <span className="text-sm font-normal text-slate-500"> /100</span>}</>} />
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {items.map(({ label, value, icon, tone, foot }) => (
+        <StatCard key={label} icon={icon} tone={toneOf(tone)} label={label} value={value} foot={<span className="text-xs text-slate-500">{foot}</span>} />
       ))}
     </div>
   );
@@ -142,50 +131,6 @@ export function TopProvinces({ provinces }: { provinces: ProvinceSummary[] }) {
           </tbody>
         </table>
       )}
-    </Card>
-  );
-}
-
-export function ProgramStatus() {
-  const s = SIM.programStatus;
-  const total = s.reduce((a, r) => a + r.value, 0);
-  return (
-    <Card title="Status Program Pelestarian" className="h-full" action={<SimulatedBadge />} bodyClassName="flex flex-col items-center justify-between gap-4">
-      <Donut segs={s} center={String(total)} sub="Program" size="size-40" />
-      <ul className="grid w-full grid-cols-2 gap-2">
-        {s.map((r) => (
-          <li key={r.label} className="flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
-            <span className="h-8 w-1.5 shrink-0 rounded-full" style={{ background: r.color }} aria-hidden />
-            <div className="min-w-0 leading-tight">
-              <p className="text-xl font-bold">{r.value} <span className="text-xs font-normal text-slate-500">({id((r.value / total) * 100, 0)}%)</span></p>
-              <p className="truncate text-xs text-slate-500">{r.label}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Card>
-  );
-}
-
-export function ProgramImpact() {
-  return (
-    <Card title="Dampak Program (Sebelum vs Sesudah)" className="h-full" action={<SimulatedBadge />} bodyClassName="flex flex-col gap-3">
-      {SIM.impact.map((r) => {
-        const max = Math.max(r.before, r.after);
-        return (
-          <div key={r.label} className="flex flex-1 flex-col justify-between rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-medium">{r.label}</span>
-              <span className="rounded-full bg-green-50 px-2 py-0.5 ring-1 ring-green-200"><Delta v={((r.after - r.before) / r.before) * 100} /></span>
-            </div>
-            <p className="flex items-baseline gap-2"><span className="text-sm text-slate-400 line-through decoration-slate-300">{id(r.before)}</span><span aria-hidden className="text-slate-400">→</span><b className="text-2xl">{id(r.after)}</b></p>
-            <div className="space-y-1" aria-hidden>
-              <div className="h-1.5 rounded-full bg-slate-200"><div className="h-1.5 rounded-full bg-slate-400" style={{ width: `${(r.before / max) * 100}%` }} /></div>
-              <div className="h-1.5 rounded-full bg-slate-200"><div className="h-1.5 rounded-full bg-navy-2" style={{ width: `${(r.after / max) * 100}%` }} /></div>
-            </div>
-          </div>
-        );
-      })}
     </Card>
   );
 }

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { api } from "@/lib/api-server";
 import type { Overview, Risk, RiskLevelName } from "@/types/api";
-import type { Row } from "./ObjectTable";
+import type { Row } from "@/features/overview/ObjectTable";
 
-export const TABS = [["objek", "Daftar Objek Budaya"], ["faktor", "Analisis Faktor Risiko"], ["heatmap", "Heatmap Wilayah"], ["tren", "Perbandingan Tren"], ["skenario", "Simulasi Skenario"]] as const;
+export const TABS = [["objek", "Daftar Objek Budaya"], ["faktor", "Analisis Faktor Risiko"], ["heatmap", "Heatmap Wilayah"], ["tren", "Perbandingan Tren"]] as const;
 export type TabId = (typeof TABS)[number][0];
 
 export function TabNav({ active, href }: { active: TabId; href: (o: Record<string, string | number>) => string }) {

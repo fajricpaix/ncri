@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Download, Eye, Plus } from "lucide-react";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import type { RiskLevelName } from "@/types/api";
 
-export type Row = { id: string; name: string; category: string; province: string; score: number | null; level: RiskLevelName; is_simulated: boolean };
+export type Row = { id: string; name: string; category: string; province: string; score: number | null; level: RiskLevelName };
 
 const SCORE_CLS: Record<RiskLevelName, string> = { HIGH: "bg-risk-high", MEDIUM: "bg-risk-mid", LOW: "bg-risk-low", INSUFFICIENT_DATA: "bg-risk-none" };
 export const PAGE_SIZE = 6;
@@ -35,7 +35,6 @@ export function ObjectTable({ rows, total, page, selected, href, csvHref, canAdd
               <tr key={r.id} className={`border-b border-slate-100 ${selected === r.id ? "bg-gold-soft/40" : "hover:bg-slate-50"}`}>
                 <td className="raw px-3 py-3 font-semibold">
                   <Link href={`/cultural-repository/${r.id}`} className="text-navy-2 hover:underline">{r.name}</Link>
-                  {r.is_simulated && <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">SIMULATED</span>}
                 </td>
                 <td className="raw">{r.category}</td>
                 <td className="raw">{r.province}</td>

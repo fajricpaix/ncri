@@ -1,7 +1,7 @@
 "use client";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { MapLevel, ProvinceSummary } from "@/types/api";
-import { Legend, RiskMap } from "./RiskMap";
+import { Legend, RiskMap } from "@/features/map/RiskMap";
 
 // Klik provinsi = set filter ?prov=, tabel + panel detail ikut berubah.
 export function MapCard({ provinces, selected, level, height = 380 }: { provinces: ProvinceSummary[]; selected: string | null; level: MapLevel | "ALL"; height?: number }) {

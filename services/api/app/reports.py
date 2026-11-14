@@ -42,7 +42,6 @@ def _rows(db: Session):
             "level": a.risk_level.value if a else "INSUFFICIENT_DATA",
             "confidence": None if not a or a.data_quality_score is None else float(a.data_quality_score),
             "period_end": a.period_end.isoformat() if a else None,
-            "is_simulated": o.data_origin == m.Origin.SIMULATED or bool(a and a.is_simulated),
         })
     return out
 
@@ -82,8 +81,7 @@ def map_provinces(db: Session = DB):
         out.append({"code": code, "name": name, "n_objects": len(rows), **_tally(rows),
                     "level": _tally(rows)["level"] if rows else "NO_DATA",
                     "merged_note": (f"Termasuk provinsi pemekaran: {', '.join(names[c] for c in merged)}" if merged else None),
-                    "is_simulated": any(r["is_simulated"] for r in rows),
-                    "objects": [{k: r[k] for k in ("id", "name", "category", "score", "level", "confidence", "is_simulated")}
+                    "objects": [{k: r[k] for k in ("id", "name", "category", "score", "level", "confidence")}
                                 for r in sorted(rows, key=lambda r: -(r["score"] or -1))]})
     return out
 
@@ -104,7 +102,7 @@ def executive(province: str | None = None, db: Session = DB):
         origins[r["data_origin"]] = origins.get(r["data_origin"], 0) + 1
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(), "scope": scope, "province": province,
-        "is_simulated": any(r["is_simulated"] for r in rows), "total_objects": len(rows), **_tally(rows),
+        "total_objects": len(rows), **_tally(rows),
         "open_warnings": open_w, "data_origins": origins, "method_version": METHOD_VERSION, "method_params": PARAMS,
         "caveats": CAVEATS,
         "objects": sorted(rows, key=lambda r: -(r["score"] if r["score"] is not None else -1)),
@@ -130,9 +128,9 @@ def objects_csv(province: str | None = None, db: Session = DB):
     rows = _province_filter(_rows(db), province)
     return _csv("ncri-objek-risiko.csv",
                 ["kode", "objek", "kategori", "provinsi", "skor_risiko", "tingkat_risiko", "data_confidence",
-                 "periode_s_d", "asal_data", "is_simulated", "verifikasi", "metode"],
+                 "periode_s_d", "asal_data", "verifikasi", "metode"],
                 [[r["external_code"], r["name"], r["category"], r["province"], r["score"], r["level"], r["confidence"],
-                  r["period_end"], r["data_origin"], str(r["is_simulated"]).lower(), r["verification"], METHOD_VERSION]
+                  r["period_end"], r["data_origin"], r["verification"], METHOD_VERSION]
                  for r in rows])
 
 

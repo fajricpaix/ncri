@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/Card";
 import { MapCard } from "@/features/map/MapCard";
 import { FilterBar } from "@/features/overview/FilterBar";
 import { FactorAnalysis, RegionHeatmap, TabNav, TABS, TrendCompare, type TabId } from "@/features/overview/AnalysisTabs";
-import { ScenarioSim } from "@/features/overview/ScenarioSim";
 import { ObjectDetail } from "@/features/overview/ObjectDetail";
 import { ObjectTable, PAGE_SIZE, type Row } from "@/features/overview/ObjectTable";
 import { RiskChart } from "@/features/overview/RiskChart";
@@ -23,7 +22,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/cultural-ri
   const [d, provinces, me, sp] = await Promise.all([api<Overview>("/dashboard/overview"), api<ProvinceSummary[]>("/map/provinces"), getMe(), searchParams]);
   const one = (k: string) => { const v = sp[k]; return (Array.isArray(v) ? v[0] : v) ?? ""; };
   const f = { cat: one("cat"), prov: one("prov") || one("p"), lvl: one("lvl") };
-  const all: (Row & { pcode: string })[] = provinces.flatMap((p) => p.objects.map((o) => ({ id: o.id, name: o.name, category: o.category, province: p.name, pcode: p.code, score: o.score, level: o.level, is_simulated: o.is_simulated })));
+  const all: (Row & { pcode: string })[] = provinces.flatMap((p) => p.objects.map((o) => ({ id: o.id, name: o.name, category: o.category, province: p.name, pcode: p.code, score: o.score, level: o.level })));
   const scoped = all.filter((r) => (!f.cat || r.category === f.cat) && (!f.prov || r.pcode === f.prov));
   const rows = scoped.filter((r) => !f.lvl || r.level === f.lvl).sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
   const dist = Object.fromEntries(LEVELS.map(([l]) => [l, rows.filter((r) => r.level === l).length])) as Record<RiskLevelName, number>;
@@ -93,12 +92,11 @@ async function Content({ searchParams }: { searchParams: PageProps<"/cultural-ri
               {tab === "faktor" && <Suspense fallback={<PageLoader label="Menghitung…" />}><FactorAnalysis rows={rows} /></Suspense>}
               {tab === "heatmap" && <RegionHeatmap rows={rows} href={href} />}
               {tab === "tren" && <TrendCompare trend={d.trend} rows={rows} />}
-              {tab === "skenario" && <ScenarioSim scores={scores} />}
             </Card>
           )}
         </div>
       </div>
-      <p className="text-xs text-slate-500">Data SIMULATED ditandai pada tabel. <Link href="/" className="underline">Kembali ke Beranda</Link></p>
+      <p className="text-xs text-slate-500"><Link href="/" className="underline">Kembali ke Beranda</Link></p>
     </div>
   );
 }

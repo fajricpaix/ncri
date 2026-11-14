@@ -1,7 +1,7 @@
 "use client";
 import { Info } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { ABOUT_EXTRA, NAV } from "./nav";
+import { ABOUT_EXTRA, NAV } from "@/components/layout/nav";
 
 // Kartu penjelasan singkat fungsi halaman, tepat di bawah header. Hanya di halaman menu (bukan detail/form).
 export function PageIntro() {
